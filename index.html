@@ -2,7 +2,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ALDISAN - Reporte de Tarimas</title>
+  <title>ALDISAN – Reporte de Carga de Tarimas</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -10,98 +10,79 @@
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: #0b1220;
-      color: #fff;
+      color: #e1e1e1;
       margin: 0;
       padding: 20px;
     }
     h1 {
-      color: #3b82f6;
       text-align: center;
+      color: #4dabf7;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    th, td {
-      border: 1px solid #3b82f6;
-      padding: 10px;
-      text-align: center;
-    }
-    th {
-      background-color: #1e293b;
-    }
-    .form-section {
+    .formulario {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 15px;
       margin-bottom: 20px;
     }
-    label {
-      font-weight: bold;
-      margin-bottom: 5px;
-      display: block;
-    }
     input, select {
+      padding: 8px;
+      background-color: #1c2331;
+      border: 1px solid #555;
+      color: white;
+      border-radius: 4px;
+    }
+    table {
       width: 100%;
-      padding: 10px;
-      border-radius: 5px;
+      border-collapse: collapse;
+      background-color: #1c2331;
+    }
+    th, td {
+      border: 1px solid #555;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background-color: #2e3b4e;
+    }
+    .acciones {
+      margin-top: 20px;
+      text-align: center;
+    }
+    .acciones button {
+      padding: 10px 20px;
+      margin: 5px;
       border: none;
-      background: #1e293b;
-      color: #fff;
+      border-radius: 4px;
+      background-color: #4dabf7;
+      color: white;
+      cursor: pointer;
     }
     .firmas {
+      margin-top: 60px;
       display: flex;
-      justify-content: space-between;
-      margin-top: 40px;
+      justify-content: space-around;
     }
-    .firma-box {
+    .firmas div {
+      border-top: 1px solid #aaa;
       text-align: center;
-      flex: 1;
-    }
-    .firma-line {
-      height: 1px;
-      background: #3b82f6;
-      margin: 40px 20px 10px;
-    }
-    .botones {
-      margin: 20px 0;
-      text-align: center;
-    }
-    .botones button {
-      margin: 0 10px;
-      padding: 10px 20px;
-      background: #3b82f6;
-      border: none;
-      border-radius: 5px;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
+      width: 200px;
+      padding-top: 5px;
     }
   </style>
 </head>
 <body>
-  <h1>ALDISAN – Reporte de Carga de Tarimas</h1>  <div class="form-section">
-    <div>
-      <label for="operador">Operador</label>
-      <input type="text" id="operador" />
-    </div>
-    <div>
-      <label for="placas">Placas</label>
-      <input type="text" id="placas" />
-    </div>
-    <div>
-      <label for="tipoUnidad">Tipo de Unidad</label>
-      <input type="text" id="tipoUnidad" />
-    </div>
-    <div>
-      <label for="transportista">Transportista</label>
-      <input type="text" id="transportista" />
-    </div>
-    <div>
-      <label for="documento">Factura / Remisión</label>
-      <input type="text" id="documento" />
-    </div>
+  <h1>ALDISAN – Reporte de Carga de Tarimas</h1>
+  <div class="formulario">
+    <input type="text" id="operador" placeholder="Operador">
+    <input type="text" id="placas" placeholder="Placas">
+    <select id="tipoUnidad">
+      <option value="">Tipo de Unidad</option>
+      <option value="Camioneta">Camioneta</option>
+      <option value="Torton">Torton</option>
+      <option value="Tráiler">Tráiler</option>
+    </select>
+    <input type="text" id="transportista" placeholder="Transportista">
+    <input type="text" id="facturaRemision" placeholder="Factura / Remisión">
   </div>  <table id="tabla">
     <thead>
       <tr>
@@ -119,88 +100,58 @@
         <td colspan="7">Sin productos aún</td>
       </tr>
     </tbody>
-  </table>  <div class="firmas">
-    <div class="firma-box">
-      <div class="firma-line"></div>
-      <div id="firmaOperador"></div>
-    </div>
-    <div class="firma-box">
-      <div class="firma-line"></div>
-      <div>VÍCTOR GONZÁLES</div>
-    </div>
-  </div>  <div class="botones">
+  </table>  <div class="acciones">
     <button onclick="exportarExcel()">Exportar Excel</button>
     <button onclick="window.print()">Imprimir</button>
+  </div>  <div class="firmas">
+    <div id="firmaOperador"></div>
+    <div>VÍCTOR GONZÁLES</div>
   </div>  <script>
-    let itemCount = 0;
-    let totalPieces = 0;
-    let codigosEscaneados = new Set();
     let registrosExcel = [];
 
     function exportarExcel() {
       const operador = document.getElementById('operador').value;
       const placas = document.getElementById('placas').value;
       const tipoUnidad = document.getElementById('tipoUnidad').value;
-      const documento = document.getElementById('documento').value;
       const transportista = document.getElementById('transportista').value;
+      const facturaRemision = document.getElementById('facturaRemision').value;
 
-      const datosCabecera = [
-        { Dato: 'Operador', Valor: operador },
-        { Dato: 'Placas', Valor: placas },
-        { Dato: 'Tipo de Unidad', Valor: tipoUnidad },
-        { Dato: 'Factura/Remisión', Valor: documento },
-        { Dato: 'Transportista', Valor: transportista },
-        {},
-      ];
+      const filas = document.querySelectorAll('#tabla tbody tr');
+      const datos = [];
 
-      const wb = XLSX.utils.book_new();
-      const cabecera = XLSX.utils.json_to_sheet(datosCabecera);
-      const productos = XLSX.utils.json_to_sheet(registrosExcel, { origin: -1 });
-      XLSX.utils.book_append_sheet(wb, cabecera, "Reporte");
-      XLSX.writeFile(wb, "reporte_tarimas.xlsx");
-    }
+      filas.forEach(fila => {
+        if (!fila.classList.contains('empty-row')) {
+          const celdas = fila.querySelectorAll('td');
+          datos.push({
+            Operador: operador,
+            Placas: placas,
+            TipoUnidad: tipoUnidad,
+            Transportista: transportista,
+            FacturaRemision: facturaRemision,
+            Código: celdas[0].textContent,
+            Descripción: celdas[1].textContent,
+            Lote: celdas[2].textContent,
+            Caducidad: celdas[3].textContent,
+            Cajas: celdas[4].textContent,
+            PzCaja: celdas[5].textContent,
+            PzTotal: celdas[6].textContent,
+          });
+        }
+      });
 
-    function procesarCodigoQR(codigo) {
-      const partes = codigo.trim().split(/\t|\s{2,}/);
-      if (partes.length < 9) {
-        alert("Código QR no válido");
+      if (datos.length === 0) {
+        alert("No hay datos para exportar");
         return;
       }
 
-      const [operadorQR, folio, codigoId, descripcion, lote, caducidad, pzCaja, cajas, totalPiezasQR] = partes;
-      const totalPz = parseInt(pzCaja) * parseInt(cajas);
-      totalPieces += totalPz;
-      itemCount++;
-
-      document.getElementById('firmaOperador').innerText = operadorQR;
-
-      const tbody = document.querySelector('#tabla tbody');
-      const emptyRow = document.querySelector('.empty-row');
-      if (emptyRow) emptyRow.remove();
-
-      const newRow = document.createElement('tr');
-      newRow.innerHTML = `
-        <td>${codigoId}</td>
-        <td>${descripcion}</td>
-        <td>${lote}</td>
-        <td>${caducidad}</td>
-        <td>${cajas}</td>
-        <td>${pzCaja}</td>
-        <td>${totalPz}</td>`;
-
-      tbody.appendChild(newRow);
-
-      registrosExcel.push({
-        operador: operadorQR,
-        folio,
-        codigo: codigoId,
-        descripcion,
-        lote,
-        caducidad,
-        pzCaja: parseInt(pzCaja),
-        cajas: parseInt(cajas),
-        totalPiezas: totalPz
-      });
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(datos);
+      XLSX.utils.book_append_sheet(wb, ws, "Tarimas");
+      XLSX.writeFile(wb, "reporte_tarimas.xlsx");
     }
+
+    document.getElementById('operador').addEventListener('input', () => {
+      document.getElementById('firmaOperador').textContent = document.getElementById('operador').value;
+    });
   </script></body>
 </html>
