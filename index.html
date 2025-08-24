@@ -1,121 +1,157 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ALDISAN – Reporte de Carga de Tarimas</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ALDISAN - Reporte de Tarimas</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    body {
-      background: #0a0f1c;
-      color: white;
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-    h1 {
-      text-align: center;
-    }
-    input, select, button {
-      margin: 10px 0;
-      padding: 10px;
-      font-size: 1em;
-    }
-    table {
-      width: 100%;
-      margin-top: 20px;
-      border-collapse: collapse;
-    }
-    th, td {
-      padding: 8px;
-      border: 1px solid #ccc;
-      text-align: center;
-      background: #1c2535;
-    }
-    .actions button {
-      margin-right: 10px;
-    }
+    /* estilos omitidos aquí por brevedad, mantener los tuyos originales sin cambios */
   </style>
 </head>
 <body>
-  <h1>ALDISAN – Reporte de Carga de Tarimas</h1>
-
-  <input type="text" id="nombreOperador" placeholder="Nombre del Operador">
-  <input type="text" id="placas" placeholder="Placas">
-  <select id="tipoUnidad">
-    <option value="Camioneta">Camioneta</option>
-    <option value="Torton">Torton</option>
-    <option value="Trailer">Trailer</option>
-  </select>
-  <br>
-  <input type="file" id="inputQR" accept="image/*">
-  <div class="actions">
-    <button onclick="exportToExcel()">Exportar a Excel</button>
-    <button onclick="window.print()">Imprimir PDF</button>
-  </div>
-
-  <table id="tablaTarimas">
-    <thead>
-      <tr>
-        <th>Código</th>
-        <th>Descripción</th>
-        <th>Lote</th>
-        <th>Caducidad</th>
-        <th>Cajas</th>
-        <th>Pz/Caja</th>
-        <th>Pz/Tarima</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
+  <!-- HTML visual igual al que compartiste -->
+  <!-- ... -->
   <script>
-    const tabla = document.querySelector('#tablaTarimas tbody');
-    const qrsEscaneados = new Set();
-    const registros = [];
+    let itemCount = 0;
+    let totalPieces = 0;
+    let cameraStream = null;
+    let scanningInterval = null;
+    let codigosEscaneados = new Set();
+    let registrosExcel = [];
 
-    document.getElementById('inputQR').addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const imageBitmap = await createImageBitmap(file);
-      const canvas = document.createElement('canvas');
-      canvas.width = imageBitmap.width;
-      canvas.height = imageBitmap.height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(imageBitmap, 0, 0);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const qr = jsQR(imageData.data, canvas.width, canvas.height);
-      if (!qr) return alert('QR no válido');
+    function procesarCodigoQR(codigo) {
+      stopCamera();
 
-      const texto = qr.data.trim();
-      if (qrsEscaneados.has(texto)) return alert('QR ya escaneado');
-      qrsEscaneados.add(texto);
+      if (codigosEscaneados.has(codigo)) {
+        alert("Este código ya fue escaneado.");
+        return;
+      }
+      codigosEscaneados.add(codigo);
 
-      const partes = texto.split('\t');
-      if (partes.length < 9) return alert('Formato QR incorrecto');
+      const partes = codigo.trim().split(/\t|\s{2,}/);
+      if (partes.length < 9) {
+        alert("QR no válido: formato incorrecto");
+        return;
+      }
 
-      const [operador, folio, codigo, descripcion, lote, caducidad, cajas, pzxcaja, total] = partes;
-      const fila = document.createElement('tr');
-      fila.innerHTML = `
-        <td>${codigo}</td>
+      const [operadorQR, folio, codigoId, descripcion, lote, caducidad, pzCaja, cajas, totalPiezasQR] = partes;
+
+      const totalPz = parseInt(pzCaja) * parseInt(cajas);
+      totalPieces += totalPz;
+      itemCount++;
+
+      const tbody = document.querySelector('#tabla tbody');
+      const emptyRow = document.querySelector('.empty-row');
+      if (emptyRow) emptyRow.remove();
+
+      const newRow = document.createElement('tr');
+      newRow.innerHTML = `
+        <td>${codigoId}</td>
         <td>${descripcion}</td>
         <td>${lote}</td>
-        <td>${caducidad}</td>
+        <td>${pzCaja}</td>
         <td>${cajas}</td>
-        <td>${pzxcaja}</td>
-        <td>${total}</td>
-      `;
-      tabla.appendChild(fila);
+        <td>${totalPz}</td>
+        <td>${caducidad}</td>
+        <td>
+          <div class="action-buttons">
+            <button class="btn btn-danger btn-small" onclick="removeRow(this, '${codigo}')">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </td>`;
 
-      registros.push({ operador, folio, codigo, descripcion, lote, caducidad, cajas, pzxcaja, total });
-    });
+      tbody.appendChild(newRow);
 
-    function exportToExcel() {
-      if (registros.length === 0) return alert('No hay datos para exportar');
+      registrosExcel.push({
+        operador: operadorQR,
+        folio,
+        codigo: codigoId,
+        descripcion,
+        lote,
+        caducidad,
+        pzCaja: parseInt(pzCaja),
+        cajas: parseInt(cajas),
+        totalPiezas: totalPz
+      });
+
+      updateCounters();
+    }
+
+    function removeRow(button, codigo) {
+      const row = button.closest('tr');
+      const pieces = parseInt(row.cells[5].textContent);
+      itemCount--;
+      totalPieces -= pieces;
+      codigosEscaneados.delete(codigo);
+
+      registrosExcel = registrosExcel.filter(r => r.codigo !== codigo);
+      row.remove();
+
+      if (document.querySelectorAll('#tabla tbody tr').length === 0) {
+        const tbody = document.querySelector('#tabla tbody');
+        tbody.innerHTML = `
+          <tr class="empty-row">
+            <td colspan="8">
+              <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <p>No hay productos escaneados</p>
+                <p>Use el botón \"Escanear QR\" para comenzar</p>
+              </div>
+            </td>
+          </tr>`;
+      }
+
+      updateCounters();
+    }
+
+    function exportarExcel() {
+      if (registrosExcel.length === 0) {
+        alert("No hay datos para exportar");
+        return;
+      }
+
       const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(registros);
-      XLSX.utils.book_append_sheet(wb, ws, 'Tarimas');
-      XLSX.writeFile(wb, 'reporte_tarimas.xlsx');
+      const ws = XLSX.utils.json_to_sheet(registrosExcel);
+      XLSX.utils.book_append_sheet(wb, ws, "Tarimas");
+      XLSX.writeFile(wb, "reporte_tarimas.xlsx");
+    }
+
+    function nuevoReporte() {
+      if (confirm('¿Está seguro de que desea comenzar un nuevo reporte? Se perderán todos los datos actuales.')) {
+        stopCamera();
+        resetCameraUI();
+        cerrarManual();
+        document.getElementById('operador').value = '';
+        document.getElementById('placas').value = '';
+        document.getElementById('tipoUnidad').value = '';
+
+        const tbody = document.querySelector('#tabla tbody');
+        tbody.innerHTML = `
+          <tr class="empty-row">
+            <td colspan="8">
+              <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <p>No hay productos escaneados</p>
+                <p>Use el botón \"Escanear QR\" para comenzar</p>
+              </div>
+            </td>
+          </tr>`;
+
+        itemCount = 0;
+        totalPieces = 0;
+        codigosEscaneados.clear();
+        registrosExcel = [];
+        updateCounters();
+      }
+    }
+
+    function updateCounters() {
+      document.getElementById('itemCount').textContent = itemCount;
+      document.getElementById('totalPieces').textContent = totalPieces;
     }
   </script>
 </body>
