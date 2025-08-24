@@ -1,9 +1,8 @@
-<!DOCTYPE html>
-<html lang="es">
+<!DOCTYPE html><html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ALDISAN – Reporte de Carga de Tarimas</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ALDISAN-KSK REPORTE DE EMBARQUE</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <style>
@@ -59,21 +58,25 @@
       margin: auto;
       display: block;
     }
+    .firmas {
+      margin-top: 50px;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 40px;
+    }
+    .firmas span {
+      display: inline-block;
+      text-align: center;
+    }
     @media print {
-      body {
-        background: white;
-        color: black;
-      }
-      button, input, select, #video {
-        display: none;
-      }
+      body { background: white; color: black; }
+      button, input, select, #video { display: none; }
+      .firmas { margin-top: 100px; }
     }
   </style>
 </head>
 <body>
-  <h1>ALDISAN – Reporte de Carga de Tarimas</h1>
-
-  <input id="operador" placeholder="Operador" />
+  <h1>ALDISAN – Reporte de Carga de Tarimas</h1>  <input id="operador" placeholder="Operador" />
   <input id="placas" placeholder="Placas" />
   <select id="unidad">
     <option value="">Tipo de Unidad</option>
@@ -82,10 +85,7 @@
     <option value="CAMIONETA">CAMIONETA</option>
   </select>
   <input id="transportista" placeholder="Transportista" />
-  <input id="factura" placeholder="Factura / Remisión" />
-  
-  <button onclick="startQRScanner()">Escanear QR</button>
-  <video id="video" class="hidden"></video>
+  <input id="factura" placeholder="Factura / Remisión" /><button onclick="startQRScanner()">Escanear QR</button> <video id="video" class="hidden"></video>
 
   <table id="tabla">
     <thead>
@@ -102,18 +102,19 @@
     <tbody>
       <tr><td colspan="7">Sin productos aún</td></tr>
     </tbody>
-  </table>
-
-  <div style="margin-top: 30px; text-align: center;">
+  </table>  <div style="margin-top: 30px; text-align: center;">
     <button onclick="exportarExcel()">Exportar Excel</button>
     <button onclick="window.print()">Imprimir</button>
-    <div style="margin-top: 30px;">
-      <span id="firmaOperador">__________________________<br>Operador</span>
-      <span style="float:right;">__________________________<br>VÍCTOR GONZÁLES</span>
-    </div>
-  </div>
-
-  <script>
+  </div>  <div class="firmas">
+    <span>
+      __________________________<br>
+      <span id="firmaOperador">Operador</span>
+    </span>
+    <span>
+      __________________________<br>
+      VÍCTOR GONZÁLES
+    </span>
+  </div>  <script>
     const tabla = document.querySelector("#tabla tbody");
     const video = document.getElementById("video");
     let scanned = new Set();
@@ -161,7 +162,7 @@
               <td>${datos[8]}</td>
             </tr>
           `;
-          document.getElementById("firmaOperador").innerHTML = `__________________________<br>${document.getElementById("operador").value}`;
+          document.getElementById("firmaOperador").textContent = document.getElementById("operador").value;
         }
       }
       requestAnimationFrame(scanFrame);
@@ -183,6 +184,5 @@
       XLSX.utils.book_append_sheet(wb, ws, "Reporte");
       XLSX.writeFile(wb, "reporte_tarimas.xlsx");
     }
-  </script>
-</body>
+  </script></body>
 </html>
