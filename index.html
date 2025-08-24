@@ -2,157 +2,168 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ALDISAN - Reporte de Tarimas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ALDISAN – Reporte de Tarimas</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    /* estilos omitidos aquí por brevedad, mantener los tuyos originales sin cambios */
+    body { font-family: sans-serif; background: #0b1220; color: white; padding: 20px; }
+    h1 { color: #3b82f6; text-align: center; }
+    label, select, input { display: block; width: 100%; margin-bottom: 10px; }
+    .btn { padding: 10px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-danger { background: #ef4444; color: white; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 8px; border: 1px solid #333; text-align: center; }
+    video { width: 100%; max-width: 500px; margin: 10px auto; display: block; }
+    .firmas { display: flex; justify-content: space-between; margin-top: 50px; }
+    .firmas div { width: 45%; text-align: center; }
+    .firma-line { border-top: 1px solid #aaa; margin: 50px 0 10px; }
+    @media print {
+      .no-print, video, button { display: none; }
+      body { background: white; color: black; }
+      table, th, td { border: 1px solid #000; color: black; }
+    }
   </style>
 </head>
 <body>
-  <!-- HTML visual igual al que compartiste -->
-  <!-- ... -->
-  <script>
-    let itemCount = 0;
-    let totalPieces = 0;
-    let cameraStream = null;
-    let scanningInterval = null;
-    let codigosEscaneados = new Set();
-    let registrosExcel = [];
 
-    function procesarCodigoQR(codigo) {
-      stopCamera();
+<h1>ALDISAN – Reporte de Carga de Tarimas</h1>
 
-      if (codigosEscaneados.has(codigo)) {
-        alert("Este código ya fue escaneado.");
-        return;
-      }
-      codigosEscaneados.add(codigo);
+<div class="no-print">
+  <label>Nombre del Operador <input type="text" id="operador"></label>
+  <label>Placas <input type="text" id="placas"></label>
+  <label>Tipo de Unidad
+    <select id="tipoUnidad">
+      <option>Camioneta</option>
+      <option>Torton</option>
+      <option>Tráiler</option>
+    </select>
+  </label>
+  <button class="btn btn-primary" onclick="startScanner()">📷 Escanear QR</button>
+  <button class="btn btn-success" onclick="exportExcel()">📁 Exportar Excel</button>
+  <button class="btn btn-warning" onclick="window.print()">🖨️ Imprimir</button>
+  <button class="btn btn-danger" onclick="nuevoReporte()">🆕 Nuevo Reporte</button>
+</div>
 
-      const partes = codigo.trim().split(/\t|\s{2,}/);
-      if (partes.length < 9) {
-        alert("QR no válido: formato incorrecto");
-        return;
-      }
+<video id="cameraPreview" autoplay muted playsinline></video>
+<canvas id="qrCanvas" hidden></canvas>
 
-      const [operadorQR, folio, codigoId, descripcion, lote, caducidad, pzCaja, cajas, totalPiezasQR] = partes;
+<table id="tabla">
+  <thead>
+    <tr>
+      <th>Código</th>
+      <th>Descripción</th>
+      <th>Lote</th>
+      <th>Caducidad</th>
+      <th>Cajas</th>
+      <th>Pz/Caja</th>
+      <th>Pz Total</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-      const totalPz = parseInt(pzCaja) * parseInt(cajas);
-      totalPieces += totalPz;
-      itemCount++;
+<div class="firmas">
+  <div>
+    <div class="firma-line"></div>
+    <div>Firma del Operador</div>
+  </div>
+  <div>
+    <div class="firma-line"></div>
+    <div>Firma de VÍCTOR GONZÁLES</div>
+  </div>
+</div>
 
-      const tbody = document.querySelector('#tabla tbody');
-      const emptyRow = document.querySelector('.empty-row');
-      if (emptyRow) emptyRow.remove();
+<script>
+let codigosEscaneados = new Set();
+let registrosExcel = [];
+let cameraStream;
 
-      const newRow = document.createElement('tr');
-      newRow.innerHTML = `
-        <td>${codigoId}</td>
-        <td>${descripcion}</td>
-        <td>${lote}</td>
-        <td>${pzCaja}</td>
-        <td>${cajas}</td>
-        <td>${totalPz}</td>
-        <td>${caducidad}</td>
-        <td>
-          <div class="action-buttons">
-            <button class="btn btn-danger btn-small" onclick="removeRow(this, '${codigo}')">
-              <i class="fas fa-trash"></i>
-            </button>
-          </div>
-        </td>`;
+function startScanner() {
+  if (!navigator.mediaDevices) return alert("Cámara no soportada");
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    .then(stream => {
+      cameraStream = stream;
+      const video = document.getElementById("cameraPreview");
+      video.srcObject = stream;
+      const canvas = document.getElementById("qrCanvas");
+      const ctx = canvas.getContext("2d");
+      const scan = () => {
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const code = jsQR(imageData.data, canvas.width, canvas.height);
+          if (code) {
+            stopCamera();
+            procesarQR(code.data);
+          } else {
+            requestAnimationFrame(scan);
+          }
+        } else {
+          requestAnimationFrame(scan);
+        }
+      };
+      scan();
+    })
+    .catch(err => alert("No se pudo acceder a la cámara"));
+}
 
-      tbody.appendChild(newRow);
+function stopCamera() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
+}
 
-      registrosExcel.push({
-        operador: operadorQR,
-        folio,
-        codigo: codigoId,
-        descripcion,
-        lote,
-        caducidad,
-        pzCaja: parseInt(pzCaja),
-        cajas: parseInt(cajas),
-        totalPiezas: totalPz
-      });
+function procesarQR(data) {
+  if (codigosEscaneados.has(data)) {
+    alert("Código ya escaneado");
+    return;
+  }
+  const partes = data.trim().split(/\t/);
+  if (partes.length < 9) return alert("Formato QR inválido");
 
-      updateCounters();
-    }
+  const [operador, folio, id, descripcion, lote, caducidad, pzCaja, cajas, total] = partes;
+  codigosEscaneados.add(data);
+  registrosExcel.push({ operador, folio, id, descripcion, lote, caducidad, pzCaja, cajas, total });
 
-    function removeRow(button, codigo) {
-      const row = button.closest('tr');
-      const pieces = parseInt(row.cells[5].textContent);
-      itemCount--;
-      totalPieces -= pieces;
-      codigosEscaneados.delete(codigo);
+  const row = document.createElement("tr");
+  row.innerHTML = `
+    <td>${id}</td>
+    <td>${descripcion}</td>
+    <td>${lote}</td>
+    <td>${caducidad}</td>
+    <td>${cajas}</td>
+    <td>${pzCaja}</td>
+    <td>${total}</td>`;
+  document.querySelector("#tabla tbody").appendChild(row);
+}
 
-      registrosExcel = registrosExcel.filter(r => r.codigo !== codigo);
-      row.remove();
+function exportExcel() {
+  if (registrosExcel.length === 0) return alert("No hay datos");
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(registrosExcel);
+  XLSX.utils.book_append_sheet(wb, ws, "Tarimas");
+  XLSX.writeFile(wb, "reporte_tarimas.xlsx");
+}
 
-      if (document.querySelectorAll('#tabla tbody tr').length === 0) {
-        const tbody = document.querySelector('#tabla tbody');
-        tbody.innerHTML = `
-          <tr class="empty-row">
-            <td colspan="8">
-              <div class="empty-state">
-                <i class="fas fa-inbox"></i>
-                <p>No hay productos escaneados</p>
-                <p>Use el botón \"Escanear QR\" para comenzar</p>
-              </div>
-            </td>
-          </tr>`;
-      }
+function nuevoReporte() {
+  if (!confirm("¿Seguro que deseas limpiar el reporte?")) return;
+  stopCamera();
+  codigosEscaneados.clear();
+  registrosExcel = [];
+  document.querySelector("#tabla tbody").innerHTML = "";
+  document.getElementById("operador").value = "";
+  document.getElementById("placas").value = "";
+  document.getElementById("tipoUnidad").selectedIndex = 0;
+}
+</script>
 
-      updateCounters();
-    }
-
-    function exportarExcel() {
-      if (registrosExcel.length === 0) {
-        alert("No hay datos para exportar");
-        return;
-      }
-
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(registrosExcel);
-      XLSX.utils.book_append_sheet(wb, ws, "Tarimas");
-      XLSX.writeFile(wb, "reporte_tarimas.xlsx");
-    }
-
-    function nuevoReporte() {
-      if (confirm('¿Está seguro de que desea comenzar un nuevo reporte? Se perderán todos los datos actuales.')) {
-        stopCamera();
-        resetCameraUI();
-        cerrarManual();
-        document.getElementById('operador').value = '';
-        document.getElementById('placas').value = '';
-        document.getElementById('tipoUnidad').value = '';
-
-        const tbody = document.querySelector('#tabla tbody');
-        tbody.innerHTML = `
-          <tr class="empty-row">
-            <td colspan="8">
-              <div class="empty-state">
-                <i class="fas fa-inbox"></i>
-                <p>No hay productos escaneados</p>
-                <p>Use el botón \"Escanear QR\" para comenzar</p>
-              </div>
-            </td>
-          </tr>`;
-
-        itemCount = 0;
-        totalPieces = 0;
-        codigosEscaneados.clear();
-        registrosExcel = [];
-        updateCounters();
-      }
-    }
-
-    function updateCounters() {
-      document.getElementById('itemCount').textContent = itemCount;
-      document.getElementById('totalPieces').textContent = totalPieces;
-    }
-  </script>
 </body>
 </html>
