@@ -1,169 +1,206 @@
-<!DOCTYPE html>
-<html lang="es">
+<!DOCTYPE html><html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ALDISAN – Reporte de Tarimas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ALDISAN - Reporte de Tarimas</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    body { font-family: sans-serif; background: #0b1220; color: white; padding: 20px; }
-    h1 { color: #3b82f6; text-align: center; }
-    label, select, input { display: block; width: 100%; margin-bottom: 10px; }
-    .btn { padding: 10px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
-    .btn-primary { background: #3b82f6; color: white; }
-    .btn-success { background: #10b981; color: white; }
-    .btn-warning { background: #f59e0b; color: white; }
-    .btn-danger { background: #ef4444; color: white; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { padding: 8px; border: 1px solid #333; text-align: center; }
-    video { width: 100%; max-width: 500px; margin: 10px auto; display: block; }
-    .firmas { display: flex; justify-content: space-between; margin-top: 50px; }
-    .firmas div { width: 45%; text-align: center; }
-    .firma-line { border-top: 1px solid #aaa; margin: 50px 0 10px; }
-    @media print {
-      .no-print, video, button { display: none; }
-      body { background: white; color: black; }
-      table, th, td { border: 1px solid #000; color: black; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #0b1220;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      color: #3b82f6;
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #3b82f6;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #1e293b;
+    }
+    .form-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    label {
+      font-weight: bold;
+      margin-bottom: 5px;
+      display: block;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      background: #1e293b;
+      color: #fff;
+    }
+    .firmas {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 40px;
+    }
+    .firma-box {
+      text-align: center;
+      flex: 1;
+    }
+    .firma-line {
+      height: 1px;
+      background: #3b82f6;
+      margin: 40px 20px 10px;
+    }
+    .botones {
+      margin: 20px 0;
+      text-align: center;
+    }
+    .botones button {
+      margin: 0 10px;
+      padding: 10px 20px;
+      background: #3b82f6;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
+  <h1>ALDISAN – Reporte de Carga de Tarimas</h1>  <div class="form-section">
+    <div>
+      <label for="operador">Operador</label>
+      <input type="text" id="operador" />
+    </div>
+    <div>
+      <label for="placas">Placas</label>
+      <input type="text" id="placas" />
+    </div>
+    <div>
+      <label for="tipoUnidad">Tipo de Unidad</label>
+      <input type="text" id="tipoUnidad" />
+    </div>
+    <div>
+      <label for="transportista">Transportista</label>
+      <input type="text" id="transportista" />
+    </div>
+    <div>
+      <label for="documento">Factura / Remisión</label>
+      <input type="text" id="documento" />
+    </div>
+  </div>  <table id="tabla">
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Descripción</th>
+        <th>Lote</th>
+        <th>Caducidad</th>
+        <th>Cajas</th>
+        <th>Pz/Caja</th>
+        <th>Pz Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="empty-row">
+        <td colspan="7">Sin productos aún</td>
+      </tr>
+    </tbody>
+  </table>  <div class="firmas">
+    <div class="firma-box">
+      <div class="firma-line"></div>
+      <div id="firmaOperador"></div>
+    </div>
+    <div class="firma-box">
+      <div class="firma-line"></div>
+      <div>VÍCTOR GONZÁLES</div>
+    </div>
+  </div>  <div class="botones">
+    <button onclick="exportarExcel()">Exportar Excel</button>
+    <button onclick="window.print()">Imprimir</button>
+  </div>  <script>
+    let itemCount = 0;
+    let totalPieces = 0;
+    let codigosEscaneados = new Set();
+    let registrosExcel = [];
 
-<h1>ALDISAN – Reporte de Carga de Tarimas</h1>
+    function exportarExcel() {
+      const operador = document.getElementById('operador').value;
+      const placas = document.getElementById('placas').value;
+      const tipoUnidad = document.getElementById('tipoUnidad').value;
+      const documento = document.getElementById('documento').value;
+      const transportista = document.getElementById('transportista').value;
 
-<div class="no-print">
-  <label>Nombre del Operador <input type="text" id="operador"></label>
-  <label>Placas <input type="text" id="placas"></label>
-  <label>Tipo de Unidad
-    <select id="tipoUnidad">
-      <option>Camioneta</option>
-      <option>Torton</option>
-      <option>Tráiler</option>
-    </select>
-  </label>
-  <button class="btn btn-primary" onclick="startScanner()">📷 Escanear QR</button>
-  <button class="btn btn-success" onclick="exportExcel()">📁 Exportar Excel</button>
-  <button class="btn btn-warning" onclick="window.print()">🖨️ Imprimir</button>
-  <button class="btn btn-danger" onclick="nuevoReporte()">🆕 Nuevo Reporte</button>
-</div>
+      const datosCabecera = [
+        { Dato: 'Operador', Valor: operador },
+        { Dato: 'Placas', Valor: placas },
+        { Dato: 'Tipo de Unidad', Valor: tipoUnidad },
+        { Dato: 'Factura/Remisión', Valor: documento },
+        { Dato: 'Transportista', Valor: transportista },
+        {},
+      ];
 
-<video id="cameraPreview" autoplay muted playsinline></video>
-<canvas id="qrCanvas" hidden></canvas>
+      const wb = XLSX.utils.book_new();
+      const cabecera = XLSX.utils.json_to_sheet(datosCabecera);
+      const productos = XLSX.utils.json_to_sheet(registrosExcel, { origin: -1 });
+      XLSX.utils.book_append_sheet(wb, cabecera, "Reporte");
+      XLSX.writeFile(wb, "reporte_tarimas.xlsx");
+    }
 
-<table id="tabla">
-  <thead>
-    <tr>
-      <th>Código</th>
-      <th>Descripción</th>
-      <th>Lote</th>
-      <th>Caducidad</th>
-      <th>Cajas</th>
-      <th>Pz/Caja</th>
-      <th>Pz Total</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+    function procesarCodigoQR(codigo) {
+      const partes = codigo.trim().split(/\t|\s{2,}/);
+      if (partes.length < 9) {
+        alert("Código QR no válido");
+        return;
+      }
 
-<div class="firmas">
-  <div>
-    <div class="firma-line"></div>
-    <div>Firma del Operador</div>
-  </div>
-  <div>
-    <div class="firma-line"></div>
-    <div>Firma de VÍCTOR GONZÁLES</div>
-  </div>
-</div>
+      const [operadorQR, folio, codigoId, descripcion, lote, caducidad, pzCaja, cajas, totalPiezasQR] = partes;
+      const totalPz = parseInt(pzCaja) * parseInt(cajas);
+      totalPieces += totalPz;
+      itemCount++;
 
-<script>
-let codigosEscaneados = new Set();
-let registrosExcel = [];
-let cameraStream;
+      document.getElementById('firmaOperador').innerText = operadorQR;
 
-function startScanner() {
-  if (!navigator.mediaDevices) return alert("Cámara no soportada");
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-    .then(stream => {
-      cameraStream = stream;
-      const video = document.getElementById("cameraPreview");
-      video.srcObject = stream;
-      const canvas = document.getElementById("qrCanvas");
-      const ctx = canvas.getContext("2d");
-      const scan = () => {
-        if (video.readyState === video.HAVE_ENOUGH_DATA) {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const code = jsQR(imageData.data, canvas.width, canvas.height);
-          if (code) {
-            stopCamera();
-            procesarQR(code.data);
-          } else {
-            requestAnimationFrame(scan);
-          }
-        } else {
-          requestAnimationFrame(scan);
-        }
-      };
-      scan();
-    })
-    .catch(err => alert("No se pudo acceder a la cámara"));
-}
+      const tbody = document.querySelector('#tabla tbody');
+      const emptyRow = document.querySelector('.empty-row');
+      if (emptyRow) emptyRow.remove();
 
-function stopCamera() {
-  if (cameraStream) {
-    cameraStream.getTracks().forEach(t => t.stop());
-    cameraStream = null;
-  }
-}
+      const newRow = document.createElement('tr');
+      newRow.innerHTML = `
+        <td>${codigoId}</td>
+        <td>${descripcion}</td>
+        <td>${lote}</td>
+        <td>${caducidad}</td>
+        <td>${cajas}</td>
+        <td>${pzCaja}</td>
+        <td>${totalPz}</td>`;
 
-function procesarQR(data) {
-  if (codigosEscaneados.has(data)) {
-    alert("Código ya escaneado");
-    return;
-  }
-  const partes = data.trim().split(/\t/);
-  if (partes.length < 9) return alert("Formato QR inválido");
+      tbody.appendChild(newRow);
 
-  const [operador, folio, id, descripcion, lote, caducidad, pzCaja, cajas, total] = partes;
-  codigosEscaneados.add(data);
-  registrosExcel.push({ operador, folio, id, descripcion, lote, caducidad, pzCaja, cajas, total });
-
-  const row = document.createElement("tr");
-  row.innerHTML = `
-    <td>${id}</td>
-    <td>${descripcion}</td>
-    <td>${lote}</td>
-    <td>${caducidad}</td>
-    <td>${cajas}</td>
-    <td>${pzCaja}</td>
-    <td>${total}</td>`;
-  document.querySelector("#tabla tbody").appendChild(row);
-}
-
-function exportExcel() {
-  if (registrosExcel.length === 0) return alert("No hay datos");
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(registrosExcel);
-  XLSX.utils.book_append_sheet(wb, ws, "Tarimas");
-  XLSX.writeFile(wb, "reporte_tarimas.xlsx");
-}
-
-function nuevoReporte() {
-  if (!confirm("¿Seguro que deseas limpiar el reporte?")) return;
-  stopCamera();
-  codigosEscaneados.clear();
-  registrosExcel = [];
-  document.querySelector("#tabla tbody").innerHTML = "";
-  document.getElementById("operador").value = "";
-  document.getElementById("placas").value = "";
-  document.getElementById("tipoUnidad").selectedIndex = 0;
-}
-</script>
-
-</body>
+      registrosExcel.push({
+        operador: operadorQR,
+        folio,
+        codigo: codigoId,
+        descripcion,
+        lote,
+        caducidad,
+        pzCaja: parseInt(pzCaja),
+        cajas: parseInt(cajas),
+        totalPiezas: totalPz
+      });
+    }
+  </script></body>
 </html>
