@@ -2,97 +2,94 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ALDISAN - Reporte de Tarimas</title>
+  <title>ALDISAN – Reporte de Carga de Tarimas</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     body {
+      background: #0b1220;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
       margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #0b1120;
-      color: white;
-      padding: 1rem;
+      padding: 20px;
     }
     h1 {
       text-align: center;
-      color: #00b4d8;
-      margin-bottom: 2rem;
+      color: #4fc3f7;
     }
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2rem;
+    .form-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 15px;
     }
-    .form-grid input, .form-grid select {
-      padding: 0.5rem;
+    .form-group input {
+      padding: 10px;
       border: none;
       border-radius: 5px;
+      width: 150px;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      background: #121a2f;
+      margin-top: 10px;
+      background-color: #1c2331;
     }
     th, td {
-      padding: 0.75rem;
-      border: 1px solid #1e2b3e;
+      border: 1px solid #444;
+      padding: 8px;
       text-align: center;
     }
     th {
-      background-color: #1a2e4f;
-      color: #00d4ff;
+      background-color: #263238;
+      color: #4fc3f7;
     }
-    .btns {
-      text-align: center;
-      margin-top: 2rem;
+    .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 20px;
     }
-    button {
-      background: #0077b6;
-      color: white;
+    .buttons button {
+      padding: 10px 20px;
       border: none;
-      padding: 0.75rem 1.5rem;
-      margin: 0 0.5rem;
       border-radius: 5px;
       cursor: pointer;
       font-weight: bold;
     }
-    button:hover {
-      background: #0096c7;
-    }
-    @media print {
-      body {
-        background: white;
-        color: black;
-      }
-      h1 {
-        color: black;
-      }
-      .no-print {
-        display: none;
-      }
-    }
-    .firmas {
+    .btn-export { background-color: #4caf50; color: white; }
+    .btn-print { background-color: #2196f3; color: white; }
+    .signatures {
       display: flex;
-      justify-content: space-between;
-      margin-top: 4rem;
+      justify-content: space-around;
+      margin-top: 60px;
+      font-weight: bold;
     }
-    .firmas div {
-      text-align: center;
-      border-top: 1px solid #ccc;
-      width: 45%;
+    .scanner {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    canvas {
+      display: none;
     }
   </style>
 </head>
 <body>
-  <h1>ALDISAN – Reporte de Carga de Tarimas</h1>
-  <div class="form-grid no-print">
+  <h1>ALDISAN – Reporte de Carga de Tarimas</h1>  <div class="form-group">
     <input type="text" id="operador" placeholder="Operador">
     <input type="text" id="placas" placeholder="Placas">
     <input type="text" id="tipoUnidad" placeholder="Tipo de Unidad">
     <input type="text" id="transportista" placeholder="Transportista">
     <input type="text" id="factura" placeholder="Factura / Remisión">
+  </div>  <div class="scanner">
+    <button onclick="startScanner()">Escanear QR</button>
+  </div>
+  <div class="scanner">
+    <video id="video" width="300" height="200" style="border: 1px solid white;"></video>
+    <canvas id="canvas" width="300" height="200"></canvas>
   </div>  <table id="tabla">
     <thead>
       <tr>
@@ -106,46 +103,69 @@
       </tr>
     </thead>
     <tbody>
-      <tr><td colspan="7">Sin productos aún</td></tr>
+      <tr><td colspan="7" style="text-align:center">Sin productos aún</td></tr>
     </tbody>
-  </table>  <div class="firmas">
+  </table>  <div class="buttons">
+    <button class="btn-export" onclick="exportarExcel()">Exportar Excel</button>
+    <button class="btn-print" onclick="window.print()">Imprimir</button>
+  </div>  <div class="signatures">
     <div id="firmaOperador"></div>
     <div>VÍCTOR GONZÁLES</div>
-  </div>  <div class="btns no-print">
-    <button onclick="exportarExcel()">Exportar Excel</button>
-    <button onclick="window.print()">Imprimir</button>
   </div>  <script>
-    let registros = [];
-    function actualizarFirma() {
-      document.getElementById('firmaOperador').innerText = document.getElementById('operador').value || "________";
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const tabla = document.querySelector('#tabla tbody');
+    const codigosLeidos = new Set();
+
+    function startScanner() {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(stream => {
+          video.srcObject = stream;
+          video.setAttribute("playsinline", true);
+          video.play();
+          requestAnimationFrame(scan);
+        });
     }
-    document.getElementById('operador').addEventListener('input', actualizarFirma);
+
+    function scan() {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.height = video.videoHeight;
+        canvas.width = video.videoWidth;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+        if (code && !codigosLeidos.has(code.data)) {
+          codigosLeidos.add(code.data);
+          procesarQR(code.data);
+        }
+      }
+      requestAnimationFrame(scan);
+    }
+
+    const registros = [];
+
+    function procesarQR(data) {
+      const partes = data.split(/\t|\s{2,}/);
+      if (partes.length < 9) return alert("QR no válido");
+      const [, , codigo, descripcion, lote, caducidad, pzCaja, cajas] = partes;
+      const total = parseInt(pzCaja) * parseInt(cajas);
+      tabla.innerHTML += `<tr>
+        <td>${codigo}</td>
+        <td>${descripcion}</td>
+        <td>${lote}</td>
+        <td>${caducidad}</td>
+        <td>${cajas}</td>
+        <td>${pzCaja}</td>
+        <td>${total}</td>
+      </tr>`;
+      document.getElementById("firmaOperador").textContent = document.getElementById("operador").value;
+      registros.push({ operador: document.getElementById("operador").value, placas: document.getElementById("placas").value, tipoUnidad: document.getElementById("tipoUnidad").value, transportista: document.getElementById("transportista").value, factura: document.getElementById("factura").value, codigo, descripcion, lote, caducidad, pzCaja, cajas, total });
+    }
 
     function exportarExcel() {
-      const operador = document.getElementById('operador').value;
-      const placas = document.getElementById('placas').value;
-      const tipoUnidad = document.getElementById('tipoUnidad').value;
-      const transportista = document.getElementById('transportista').value;
-      const factura = document.getElementById('factura').value;
-
-      const data = [
-        ["Operador", operador],
-        ["Placas", placas],
-        ["Tipo de Unidad", tipoUnidad],
-        ["Transportista", transportista],
-        ["Factura / Remisión", factura],
-        [],
-        ["Código", "Descripción", "Lote", "Caducidad", "Cajas", "Pz/Caja", "Pz Total"]
-      ];
-
-      document.querySelectorAll("#tabla tbody tr").forEach(row => {
-        if (row.cells.length === 7) {
-          data.push([...row.cells].map(td => td.textContent));
-        }
-      });
-
       const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.aoa_to_sheet(data);
+      const ws = XLSX.utils.json_to_sheet(registros);
       XLSX.utils.book_append_sheet(wb, ws, "Tarimas");
       XLSX.writeFile(wb, "reporte_tarimas.xlsx");
     }
