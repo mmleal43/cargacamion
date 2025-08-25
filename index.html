@@ -1,81 +1,138 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<!DOCTYPE html><html lang="es"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ALDISAN-KSK REPORTE DE EMBARQUE</title>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     body {
-      background: #0c0f1f;
-      font-family: Arial, sans-serif;
-      color: white;
-      padding: 20px;
-      text-align: center;
-    }
-    h1 {
-      color: #00bfff;
-      margin-bottom: 20px;
-    }
-    input, select, button {
-      margin: 6px;
-      padding: 10px;
-      border-radius: 5px;
-      border: none;
-      font-size: 16px;
-    }
-    button {
-      background-color: #00bfff;
-      color: black;
-      cursor: pointer;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      background-color: white;
-      color: black;
-    }
-    th, td {
-      border: 1px solid #333;
-      padding: 8px;
-      font-size: 14px;
-    }
-    th {
-      background-color: #00bfff;
-    }
-    .signatures {
-      display: flex;
-      justify-content: space-around;
-      margin-top: 50px;
-      color: black;
-    }
-    .signature-block {
-      width: 40%;
-      text-align: center;
-    }
-    .print-only {
-      display: none;
-    }
-    .logo {
-      width: 150px;
-      margin-bottom: 15px;
-    }
-    @media print {
-      body {
-        background: white;
-        color: black;
-      }
-      .no-print {
-        display: none;
-      }
-      .print-only {
-        display: block;
-      }
-    }
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #0b0c1c;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+    }header {
+  background-color: #121530;
+  text-align: center;
+  padding: 1em;
+}
+
+header img {
+  max-width: 160px;
+  margin-bottom: 10px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.6em;
+  color: #79ffdb;
+}
+
+main {
+  padding: 1em;
+}
+
+label {
+  display: block;
+  margin-top: 1em;
+  color: #ccc;
+}
+
+input,
+select,
+button {
+  padding: 0.5em;
+  margin-top: 0.5em;
+  width: 100%;
+  max-width: 500px;
+  background-color: #1e2036;
+  border: 1px solid #444;
+  color: #fff;
+  border-radius: 4px;
+}
+
+button {
+  background: linear-gradient(to right, #00f7ff, #9b00ff);
+  border: none;
+  cursor: pointer;
+}
+
+.tarima-lista {
+  margin-top: 2em;
+}
+
+.tarima-item {
+  background-color: #1b1e33;
+  padding: 1em;
+  margin-bottom: 1em;
+  border-radius: 6px;
+}
+
+footer {
+  text-align: center;
+  padding: 1em;
+  font-size: 0.8em;
+  color: #888;
+}
+
   </style>
-</head>
-<body>
-  <!-- LOGO -->
-  <img class="logo" src="data:image/jpeg;base64,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
+</head><body>
+  <header>
+    <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD... (imagen base64 completa aquí)" alt="Aldisan Logo">
+    <h1>ALDISAN-KSK REPORTE DE EMBARQUE</h1>
+  </header>  <main>
+    <form id="formulario">
+      <label for="operador">Nombre del Operador:</label>
+      <input type="text" id="operador" required><label for="placas">Placas:</label>
+  <input type="text" id="placas" required>
+
+  <label for="tipo">Tipo de Unidad:</label>
+  <select id="tipo" required>
+    <option value="Camioneta">Camioneta</option>
+    <option value="Torton">Torton</option>
+    <option value="Tráiler">Tráiler</option>
+  </select>
+
+  <label for="marca">Marca:</label>
+  <input type="text" id="marca">
+
+  <label for="factura">Factura/Remisión:</label>
+  <input type="text" id="factura">
+
+  <label for="transportista">Transportista:</label>
+  <input type="text" id="transportista">
+
+  <label for="cantidad">Cantidad de Tarimas:</label>
+  <input type="number" id="cantidad" min="1" required>
+
+  <button type="button" onclick="generarTarimas()">Generar Tarimas</button>
+</form>
+
+<div class="tarima-lista" id="tarima-lista"></div>
+
+  </main>  <footer>
+    Sistema ALDISAN-KSK © 2025
+  </footer>  <script>
+    function generarTarimas() {
+      const lista = document.getElementById('tarima-lista');
+      lista.innerHTML = '';
+      const operador = document.getElementById('operador').value;
+      const placas = document.getElementById('placas').value;
+      const tipo = document.getElementById('tipo').value;
+      const marca = document.getElementById('marca').value;
+      const factura = document.getElementById('factura').value;
+      const transportista = document.getElementById('transportista').value;
+      const cantidad = parseInt(document.getElementById('cantidad').value);
+
+      for (let i = 1; i <= cantidad; i++) {
+        const tarima = document.createElement('div');
+        tarima.classList.add('tarima-item');
+        tarima.innerHTML = `<strong>TARIMA #${i}</strong><br>
+          Operador: ${operador}<br>
+          Placas: ${placas}<br>
+          Tipo: ${tipo}<br>
+          Marca: ${marca}<br>
+          Factura/Remisión: ${factura}<br>
+          Transportista: ${transportista}`;
+        lista.appendChild(tarima);
+      }
+    }
+  </script></body></html>
