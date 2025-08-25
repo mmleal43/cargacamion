@@ -58,6 +58,10 @@
     .print-only {
       display: none;
     }
+    .logo {
+      width: 150px;
+      margin-bottom: 15px;
+    }
     @media print {
       body {
         background: white;
@@ -73,116 +77,5 @@
   </style>
 </head>
 <body>
-  <h1>ALDISAN-KSK REPORTE DE EMBARQUE</h1>
-
-  <!-- FORMULARIO -->
-  <div class="no-print">
-    <input type="text" id="operador" placeholder="Operador">
-    <input type="text" id="placas" placeholder="Placas">
-    <select id="unidad">
-      <option value="">Selecciona Unidad</option>
-      <option value="Camioneta">Camioneta</option>
-      <option value="Torton">Torton</option>
-      <option value="Tráiler">Tráiler</option>
-    </select>
-    <input type="text" id="transportista" placeholder="Transportista">
-    <input type="text" id="factura" placeholder="Factura/Remisión">
-    <br>
-    <button onclick="startScanner()">Escanear QR</button>
-    <div id="reader" style="width: 300px; margin: 20px auto;"></div>
-  </div>
-
-  <!-- INFORMACIÓN FORMULARIO (para impresión) -->
-  <div id="formInfo" class="print-only" style="margin-top: 20px; text-align:left; padding-left:20px;">
-    <p><strong>Operador:</strong> <span id="printOperador"></span></p>
-    <p><strong>Placas:</strong> <span id="printPlacas"></span></p>
-    <p><strong>Unidad:</strong> <span id="printUnidad"></span></p>
-    <p><strong>Transportista:</strong> <span id="printTransportista"></span></p>
-    <p><strong>Factura/Remisión:</strong> <span id="printFactura"></span></p>
-  </div>
-
-  <!-- TABLA -->
-  <table id="tabla">
-    <thead>
-      <tr>
-        <th>Código</th>
-        <th>Descripción</th>
-        <th>Lote</th>
-        <th>Caducidad</th>
-        <th>Cajas</th>
-        <th>Pz/Caja</th>
-        <th>Pz Total</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <!-- FIRMAS -->
-  <div class="signatures">
-    <div class="signature-block">
-      <hr>
-      <div id="firmaOperador">Operador</div>
-    </div>
-    <div class="signature-block">
-      <hr>
-      VÍCTOR GONZÁLES
-    </div>
-  </div>
-
-  <!-- BOTONES -->
-  <div class="no-print" style="margin-top: 20px;">
-    <button onclick="exportarExcel()">Exportar Excel</button>
-    <button onclick="window.print()">Imprimir</button>
-  </div>
-
-  <script>
-    let productos = new Set();
-
-    function startScanner() {
-      const html5QrCode = new Html5Qrcode("reader");
-      const config = { fps: 10, qrbox: 250 };
-
-      html5QrCode.start(
-        { facingMode: "environment" },
-        config,
-        (text) => {
-          if (productos.has(text)) {
-            alert("Este código ya fue escaneado.");
-            return;
-          }
-          productos.add(text);
-          const datos = text.split('\t');
-          if (datos.length < 9) return;
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${datos[2]}</td>
-            <td>${datos[3]}</td>
-            <td>${datos[4]}</td>
-            <td>${datos[5]}</td>
-            <td>${datos[7]}</td>
-            <td>${datos[6]}</td>
-            <td>${datos[8]}</td>`;
-          document.querySelector("#tabla tbody").appendChild(row);
-          html5QrCode.stop();
-        },
-        (err) => console.warn(err)
-      );
-    }
-
-    function exportarExcel() {
-      const table = document.getElementById("tabla");
-      const wb = XLSX.utils.table_to_book(table, { sheet: "ALDISAN-KSK REPORTE DE EMBARQUE" });
-      XLSX.writeFile(wb, "ALDISAN-KSK_REPORTE_EMBARQUE.xlsx");
-    }
-
-    window.onbeforeprint = () => {
-      document.getElementById("printOperador").innerText = document.getElementById("operador").value;
-      document.getElementById("printPlacas").innerText = document.getElementById("placas").value;
-      document.getElementById("printUnidad").innerText = document.getElementById("unidad").value;
-      document.getElementById("printTransportista").innerText = document.getElementById("transportista").value;
-      document.getElementById("printFactura").innerText = document.getElementById("factura").value;
-      document.getElementById("firmaOperador").innerText = document.getElementById("operador").value;
-    };
-  </script>
-</body>
-</html>
+  <!-- LOGO -->
+  <img class="logo" src="data:image/jpeg;base64,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
