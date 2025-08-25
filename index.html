@@ -5,6 +5,7 @@
   <title>ALDISAN-KSK REPORTE DE EMBARQUE</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <style>
     body {
       background: #0c0f1f;
@@ -69,14 +70,12 @@
         display: block;
       }
     }
-    #logo {
-      max-width: 200px;
-      margin-bottom: 10px;
+    #qrResumen {
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
-  <img id="logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAByUlEQVR42q2UW0iUQRSGv9nd3V27du3cehSrZFEULGDhZ3BgiMFBNkYotjYXWioYiKxEiooRCuLi3BohAREjU18YZbAxFpqJxLbR11HcpJOEnGf3Nz7sPGFJP8czmO+95znPO85/kaTTwK72oVtqZklXLz3yRrih7pEj9OS6IF9HRytfxMBscQBNLEvAHcRh1wBtqHzDOdDNaQefFEMN98OB3zHTd2RcyGlv0Kw8TZzyPnEkMHCIAPDbn4M0mfnMv4szKHmfVYF+qcbLRrq7YO9l+eQReEMu2sYBl02LUAlu1yJ3ivwhOxKNakDwXfOugBd3rhDeMvFM2ku8Af+H04PY6WKwK78AFhD8a4G7AC88Tx2M98TthTdf9bMw+BxVd8OafAn7A19xBiS9A14iW+D0YhAlZbxnYL2HzAbydKO+jpjSwAAAABJRU5ErkJggg==" alt="Logo Aldisan" />
   <h1>ALDISAN-KSK REPORTE DE EMBARQUE</h1>  <!-- FORMULARIO -->  <div class="no-print">
     <input type="text" id="operador" placeholder="Operador">
     <input type="text" id="placas" placeholder="Placas">
@@ -110,7 +109,7 @@
       </tr>
     </thead>
     <tbody></tbody>
-  </table>  <!-- FIRMAS -->  <div class="signatures">
+  </table>  <!-- QR RESUMEN DE CARGA -->  <div id="qrResumen" class="print-only"></div>  <!-- FIRMAS -->  <div class="signatures">
     <div class="signature-block">
       <hr>
       <div id="firmaOperador">Operador</div>
@@ -162,6 +161,28 @@
       XLSX.writeFile(wb, "ALDISAN-KSK_REPORTE_EMBARQUE.xlsx");
     }
 
+    function generarQRResumen() {
+      const filas = document.querySelectorAll("#tabla tbody tr");
+      let resumen = "";
+      filas.forEach(row => {
+        const celdas = row.querySelectorAll("td");
+        const data = Array.from(celdas).map(td => td.textContent).join('|');
+        resumen += data + '\n';
+      });
+      const qrDiv = document.getElementById("qrResumen");
+      qrDiv.innerHTML = "";
+      if (resumen.trim().length > 0) {
+        QRCode.toDataURL(resumen, { width: 200, margin: 2 }, function (err, url) {
+          if (!err) {
+            const img = document.createElement("img");
+            img.src = url;
+            img.alt = "QR resumen de carga";
+            qrDiv.appendChild(img);
+          }
+        });
+      }
+    }
+
     window.onbeforeprint = () => {
       document.getElementById("printOperador").innerText = document.getElementById("operador").value;
       document.getElementById("printPlacas").innerText = document.getElementById("placas").value;
@@ -169,6 +190,7 @@
       document.getElementById("printTransportista").innerText = document.getElementById("transportista").value;
       document.getElementById("printFactura").innerText = document.getElementById("factura").value;
       document.getElementById("firmaOperador").innerText = document.getElementById("operador").value;
+      generarQRResumen();
     };
   </script></body>
 </html>
