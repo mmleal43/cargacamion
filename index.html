@@ -1,166 +1,189 @@
-<!DOCTYPE html><html lang="es">
+<!DOCTYPE html>
+<html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ALDISAN-KSK REPORTE DE EMBARQUE</title>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     body {
-      background-color: #0b1220;
-      color: #fff;
-      font-family: 'Segoe UI', sans-serif;
+      background: #0c0f1f;
+      font-family: Arial, sans-serif;
+      color: white;
       padding: 20px;
       text-align: center;
     }
     h1 {
       color: #00bfff;
-      font-size: 28px;
+      margin-bottom: 20px;
     }
     input, select, button {
-      margin: 8px;
+      margin: 6px;
       padding: 10px;
-      font-size: 16px;
       border-radius: 5px;
       border: none;
-    }
-    input, select {
-      width: 90%;
-      max-width: 400px;
+      font-size: 16px;
     }
     button {
       background-color: #00bfff;
-      color: white;
+      color: black;
       cursor: pointer;
     }
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
-      background-color: #fff;
-      color: #000;
-    }
-    table, th, td {
-      border: 1px solid #000;
+      background-color: white;
+      color: black;
     }
     th, td {
-      padding: 10px;
+      border: 1px solid #333;
+      padding: 8px;
       font-size: 14px;
     }
-    #html5-qrcode-button-camera-permission, #html5-qrcode-anchor-scan-type-change {
-      display: none !important;
+    th {
+      background-color: #00bfff;
+    }
+    .signatures {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 50px;
+      color: black;
+    }
+    .signature-block {
+      width: 40%;
+      text-align: center;
+    }
+    .print-only {
+      display: none;
     }
     @media print {
-      body { background-color: #fff; color: #000; }
-      button, input, select, #reader { display: none !important; }
-      table { page-break-inside: avoid; }
+      body {
+        background: white;
+        color: black;
+      }
+      .no-print {
+        display: none;
+      }
+      .print-only {
+        display: block;
+      }
     }
   </style>
 </head>
 <body>
   <h1>ALDISAN – Reporte de Carga de Tarimas</h1>
-  <form id="infoForm">
-    <input type="text" id="operador" placeholder="Nombre del Operador" required><br>
-    <input type="text" id="placas" placeholder="Placas" required><br>
-    <select id="unidad" required>
-      <option value="">Tipo de Unidad</option>
+
+  <!-- FORMULARIO -->
+  <div class="no-print">
+    <input type="text" id="operador" placeholder="Operador">
+    <input type="text" id="placas" placeholder="Placas">
+    <select id="unidad">
+      <option value="">Selecciona Unidad</option>
       <option value="Camioneta">Camioneta</option>
       <option value="Torton">Torton</option>
       <option value="Tráiler">Tráiler</option>
-    </select><br>
-    <input type="text" id="factura" placeholder="Factura/Remisión" required><br>
-    <input type="text" id="transportista" placeholder="Transportista" required><br>
-  </form>
-  <button onclick="startScanner()">Escanear QR</button>
-  <div id="reader" style="width: 300px; margin: auto; display:none;"></div>  <table id="tabla">
+    </select>
+    <input type="text" id="transportista" placeholder="Transportista">
+    <input type="text" id="factura" placeholder="Factura/Remisión">
+    <br>
+    <button onclick="startScanner()">Escanear QR</button>
+    <div id="reader" style="width: 300px; margin: 20px auto;"></div>
+  </div>
+
+  <!-- TABLA -->
+  <table id="tabla">
     <thead>
       <tr>
-        <th>Código</th><th>Descripción</th><th>Lote</th><th>Caducidad</th>
-        <th>Cajas</th><th>Pz/Caja</th><th>Pz Total</th>
+        <th>Código</th>
+        <th>Descripción</th>
+        <th>Lote</th>
+        <th>Caducidad</th>
+        <th>Cajas</th>
+        <th>Pz/Caja</th>
+        <th>Pz Total</th>
       </tr>
     </thead>
-    <tbody id="tbody"></tbody>
-  </table>  <br>
-  <button onclick="exportarExcel()">Exportar Excel</button>
-  <button onclick="window.print()">Imprimir</button>  <script>
-    let productos = [];
-    const escaneados = new Set();
+    <tbody></tbody>
+  </table>
+
+  <!-- INFORMACIÓN FORMULARIO (para impresión) -->
+  <div id="formInfo" class="print-only" style="margin-top: 20px; text-align:left; padding-left:20px;">
+    <p><strong>Operador:</strong> <span id="printOperador"></span></p>
+    <p><strong>Placas:</strong> <span id="printPlacas"></span></p>
+    <p><strong>Unidad:</strong> <span id="printUnidad"></span></p>
+    <p><strong>Transportista:</strong> <span id="printTransportista"></span></p>
+    <p><strong>Factura/Remisión:</strong> <span id="printFactura"></span></p>
+  </div>
+
+  <!-- FIRMAS -->
+  <div class="signatures">
+    <div class="signature-block">
+      <hr>
+      <div id="firmaOperador">Operador</div>
+    </div>
+    <div class="signature-block">
+      <hr>
+      VÍCTOR GONZÁLES
+    </div>
+  </div>
+
+  <!-- BOTONES -->
+  <div class="no-print" style="margin-top: 20px;">
+    <button onclick="exportarExcel()">Exportar Excel</button>
+    <button onclick="window.print()">Imprimir</button>
+  </div>
+
+  <script>
+    let productos = new Set();
 
     function startScanner() {
-      document.getElementById("reader").style.display = "block";
       const html5QrCode = new Html5Qrcode("reader");
+      const config = { fps: 10, qrbox: 250 };
+
       html5QrCode.start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
-        qrCodeMessage => {
-          if (escaneados.has(qrCodeMessage)) return;
-          escaneados.add(qrCodeMessage);
-          const data = qrCodeMessage.split('\t');
-          if (data.length === 9) {
-            const [op, uid, codigo, descripcion, lote, caducidad, cajas, pzCaja, pzTotal] = data;
-            productos.push({codigo, descripcion, lote, caducidad, cajas, pzCaja, pzTotal});
-            actualizarTabla();
+        config,
+        (text) => {
+          if (productos.has(text)) {
+            alert("Este código ya fue escaneado.");
+            return;
           }
+          productos.add(text);
+          const datos = text.split('\t');
+          if (datos.length < 9) return;
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${datos[2]}</td>
+            <td>${datos[3]}</td>
+            <td>${datos[4]}</td>
+            <td>${datos[5]}</td>
+            <td>${datos[7]}</td>
+            <td>${datos[6]}</td>
+            <td>${datos[8]}</td>`;
+          document.querySelector("#tabla tbody").appendChild(row);
+          html5QrCode.stop();
         },
-        error => {}
-      ).then(() => {
-        setTimeout(() => html5QrCode.stop().then(() => {
-          document.getElementById("reader").style.display = "none";
-        }), 10000);
-      });
-    }
-
-    function actualizarTabla() {
-      const tbody = document.getElementById("tbody");
-      tbody.innerHTML = "";
-      productos.forEach(p => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${p.codigo}</td><td>${p.descripcion}</td><td>${p.lote}</td>
-                        <td>${p.caducidad}</td><td>${p.cajas}</td><td>${p.pzCaja}</td><td>${p.pzTotal}</td>`;
-        tbody.appendChild(tr);
-      });
+        (err) => console.warn(err)
+      );
     }
 
     function exportarExcel() {
-      const form = {
-        Operador: document.getElementById("operador").value,
-        Placas: document.getElementById("placas").value,
-        Unidad: document.getElementById("unidad").value,
-        Factura: document.getElementById("factura").value,
-        Transportista: document.getElementById("transportista").value,
-      };
-      const wb = XLSX.utils.book_new();
-      const wsData = [
-        ["ALDISAN – REPORTE DE EMBARQUE"],
-        ["Operador", form.Operador],
-        ["Placas", form.Placas],
-        ["Unidad", form.Unidad],
-        ["Factura/Remisión", form.Factura],
-        ["Transportista", form.Transportista],
-        [],
-        ["Código", "Descripción", "Lote", "Caducidad", "Cajas", "Pz/Caja", "Pz Total"]
-      ];
-      productos.forEach(p => wsData.push([p.codigo, p.descripcion, p.lote, p.caducidad, p.cajas, p.pzCaja, p.pzTotal]));
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-      XLSX.utils.book_append_sheet(wb, ws, "Reporte");
+      const table = document.getElementById("tabla");
+      const wb = XLSX.utils.table_to_book(table, { sheet: "Reporte" });
       XLSX.writeFile(wb, "reporte_embarque.xlsx");
     }
 
-    window.onafterprint = () => {
-      document.getElementById("reader").style.display = "none";
+    // Antes de imprimir, insertar info del formulario en zona imprimible
+    window.onbeforeprint = () => {
+      document.getElementById("printOperador").innerText = document.getElementById("operador").value;
+      document.getElementById("printPlacas").innerText = document.getElementById("placas").value;
+      document.getElementById("printUnidad").innerText = document.getElementById("unidad").value;
+      document.getElementById("printTransportista").innerText = document.getElementById("transportista").value;
+      document.getElementById("printFactura").innerText = document.getElementById("factura").value;
+      document.getElementById("firmaOperador").innerText = document.getElementById("operador").value;
     };
-  </script>  <div style="margin-top: 80px; display: flex; justify-content: space-around;">
-    <div style="text-align:center">
-      _______________________<br>
-      <span id="firmaOperador">Operador</span>
-    </div>
-    <div style="text-align:center">
-      _______________________<br>
-      VÍCTOR GONZÁLES
-    </div>
-  </div>  <script>
-    document.getElementById("operador").addEventListener("input", e => {
-      document.getElementById("firmaOperador").innerText = e.target.value || "Operador";
-    });
-  </script></body>
+  </script>
+</body>
 </html>
