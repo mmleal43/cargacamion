@@ -1,138 +1,144 @@
 <!DOCTYPE html><html lang="es"><head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ALDISAN-KSK REPORTE DE EMBARQUE</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #0b0c1c;
-      color: #fff;
+      background-color: #0b0f1a;
+      color: #ffffff;
       margin: 0;
       padding: 0;
     }header {
-  background-color: #121530;
-  text-align: center;
-  padding: 1em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #11182a;
+  padding: 10px 20px;
+  border-bottom: 2px solid #00ffff80;
 }
 
 header img {
-  max-width: 160px;
-  margin-bottom: 10px;
+  height: 60px;
 }
 
-h1 {
+header h1 {
+  font-size: 1.8em;
+  font-weight: bold;
+  color: #00d9ff;
   margin: 0;
-  font-size: 1.6em;
-  color: #79ffdb;
 }
 
 main {
-  padding: 1em;
+  padding: 20px;
 }
 
-label {
-  display: block;
-  margin-top: 1em;
-  color: #ccc;
+form {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  margin-bottom: 20px;
 }
 
 input,
 select,
 button {
-  padding: 0.5em;
-  margin-top: 0.5em;
-  width: 100%;
-  max-width: 500px;
-  background-color: #1e2036;
-  border: 1px solid #444;
-  color: #fff;
-  border-radius: 4px;
+  padding: 10px;
+  border-radius: 6px;
+  border: none;
+  font-size: 1em;
+}
+
+input:focus,
+select:focus {
+  outline: 2px solid #00ffff;
+  background-color: #1b1f2b;
+  color: white;
 }
 
 button {
-  background: linear-gradient(to right, #00f7ff, #9b00ff);
-  border: none;
+  background: linear-gradient(to right, #00ffff, #1f6fff);
+  color: #000;
+  font-weight: bold;
   cursor: pointer;
+  transition: 0.3s;
 }
 
-.tarima-lista {
-  margin-top: 2em;
+button:hover {
+  filter: brightness(1.2);
 }
 
-.tarima-item {
-  background-color: #1b1e33;
-  padding: 1em;
-  margin-bottom: 1em;
-  border-radius: 6px;
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  font-size: 0.9em;
 }
 
-footer {
+table thead {
+  background-color: #1f2a44;
+}
+
+table th,
+table td {
+  border: 1px solid #444;
+  padding: 10px;
   text-align: center;
-  padding: 1em;
-  font-size: 0.8em;
-  color: #888;
+}
+
+.acciones {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
 }
 
   </style>
 </head><body>
   <header>
-    <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD... (imagen base64 completa aquí)" alt="Aldisan Logo">
+    <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAAAAAAD... (recortado por brevedad) ..." alt="Aldisan Logo" />
     <h1>ALDISAN-KSK REPORTE DE EMBARQUE</h1>
-  </header>  <main>
-    <form id="formulario">
-      <label for="operador">Nombre del Operador:</label>
-      <input type="text" id="operador" required><label for="placas">Placas:</label>
-  <input type="text" id="placas" required>
+  </header>
+  <main>
+    <form id="embarqueForm">
+      <input type="text" placeholder="Operador" name="operador" required />
+      <input type="text" placeholder="Placas" name="placas" required />
+      <input type="text" placeholder="Marca" name="marca" required />
+      <select name="tipoUnidad" required>
+        <option value="">Tipo de Unidad</option>
+        <option value="Camioneta">Camioneta</option>
+        <option value="Torton">Torton</option>
+        <option value="Tráiler">Tráiler</option>
+      </select>
+      <select name="tipoDocumento" required>
+        <option value="">Factura/Remisión</option>
+        <option value="Factura">Factura</option>
+        <option value="Remisión">Remisión</option>
+      </select>
+      <input type="text" placeholder="Transportista" name="transportista" required />
+    </form><div class="acciones">
+  <button onclick="descargarExcel()">Exportar a Excel</button>
+  <button onclick="window.print()">Imprimir</button>
+</div>
 
-  <label for="tipo">Tipo de Unidad:</label>
-  <select id="tipo" required>
-    <option value="Camioneta">Camioneta</option>
-    <option value="Torton">Torton</option>
-    <option value="Tráiler">Tráiler</option>
-  </select>
+<table id="tablaReporte">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Descripción</th>
+      <th>Lote</th>
+      <th>Caducidad</th>
+      <th>Cajas x Tarima</th>
+      <th>Pz x Caja</th>
+      <th>Pz x Tarima</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- Datos QR escaneados se insertarán aquí -->
+  </tbody>
+</table>
 
-  <label for="marca">Marca:</label>
-  <input type="text" id="marca">
-
-  <label for="factura">Factura/Remisión:</label>
-  <input type="text" id="factura">
-
-  <label for="transportista">Transportista:</label>
-  <input type="text" id="transportista">
-
-  <label for="cantidad">Cantidad de Tarimas:</label>
-  <input type="number" id="cantidad" min="1" required>
-
-  <button type="button" onclick="generarTarimas()">Generar Tarimas</button>
-</form>
-
-<div class="tarima-lista" id="tarima-lista"></div>
-
-  </main>  <footer>
-    Sistema ALDISAN-KSK © 2025
-  </footer>  <script>
-    function generarTarimas() {
-      const lista = document.getElementById('tarima-lista');
-      lista.innerHTML = '';
-      const operador = document.getElementById('operador').value;
-      const placas = document.getElementById('placas').value;
-      const tipo = document.getElementById('tipo').value;
-      const marca = document.getElementById('marca').value;
-      const factura = document.getElementById('factura').value;
-      const transportista = document.getElementById('transportista').value;
-      const cantidad = parseInt(document.getElementById('cantidad').value);
-
-      for (let i = 1; i <= cantidad; i++) {
-        const tarima = document.createElement('div');
-        tarima.classList.add('tarima-item');
-        tarima.innerHTML = `<strong>TARIMA #${i}</strong><br>
-          Operador: ${operador}<br>
-          Placas: ${placas}<br>
-          Tipo: ${tipo}<br>
-          Marca: ${marca}<br>
-          Factura/Remisión: ${factura}<br>
-          Transportista: ${transportista}`;
-        lista.appendChild(tarima);
-      }
-    }
-  </script></body></html>
+  </main>
+</body></html>
