@@ -1,144 +1,188 @@
-<!DOCTYPE html><html lang="es"><head>
+<!DOCTYPE html>
+<html lang="es">
+<head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ALDISAN-KSK REPORTE DE EMBARQUE</title>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #0b0f1a;
-      color: #ffffff;
-      margin: 0;
-      padding: 0;
-    }header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background-color: #11182a;
-  padding: 10px 20px;
-  border-bottom: 2px solid #00ffff80;
-}
-
-header img {
-  height: 60px;
-}
-
-header h1 {
-  font-size: 1.8em;
-  font-weight: bold;
-  color: #00d9ff;
-  margin: 0;
-}
-
-main {
-  padding: 20px;
-}
-
-form {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  margin-bottom: 20px;
-}
-
-input,
-select,
-button {
-  padding: 10px;
-  border-radius: 6px;
-  border: none;
-  font-size: 1em;
-}
-
-input:focus,
-select:focus {
-  outline: 2px solid #00ffff;
-  background-color: #1b1f2b;
-  color: white;
-}
-
-button {
-  background: linear-gradient(to right, #00ffff, #1f6fff);
-  color: #000;
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-button:hover {
-  filter: brightness(1.2);
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-  font-size: 0.9em;
-}
-
-table thead {
-  background-color: #1f2a44;
-}
-
-table th,
-table td {
-  border: 1px solid #444;
-  padding: 10px;
-  text-align: center;
-}
-
-.acciones {
-  margin-top: 20px;
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-}
-
+      background: #0c0f1f;
+      font-family: Arial, sans-serif;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 {
+      color: #00bfff;
+      margin-bottom: 20px;
+    }
+    input, select, button {
+      margin: 6px;
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      font-size: 16px;
+    }
+    button {
+      background-color: #00bfff;
+      color: black;
+      cursor: pointer;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: white;
+      color: black;
+    }
+    th, td {
+      border: 1px solid #333;
+      padding: 8px;
+      font-size: 14px;
+    }
+    th {
+      background-color: #00bfff;
+    }
+    .signatures {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 50px;
+      color: black;
+    }
+    .signature-block {
+      width: 40%;
+      text-align: center;
+    }
+    .print-only {
+      display: none;
+    }
+    @media print {
+      body {
+        background: white;
+        color: black;
+      }
+      .no-print {
+        display: none;
+      }
+      .print-only {
+        display: block;
+      }
+    }
   </style>
-</head><body>
-  <header>
-    <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAAAAAAD... (recortado por brevedad) ..." alt="Aldisan Logo" />
-    <h1>ALDISAN-KSK REPORTE DE EMBARQUE</h1>
-  </header>
-  <main>
-    <form id="embarqueForm">
-      <input type="text" placeholder="Operador" name="operador" required />
-      <input type="text" placeholder="Placas" name="placas" required />
-      <input type="text" placeholder="Marca" name="marca" required />
-      <select name="tipoUnidad" required>
-        <option value="">Tipo de Unidad</option>
-        <option value="Camioneta">Camioneta</option>
-        <option value="Torton">Torton</option>
-        <option value="Tráiler">Tráiler</option>
-      </select>
-      <select name="tipoDocumento" required>
-        <option value="">Factura/Remisión</option>
-        <option value="Factura">Factura</option>
-        <option value="Remisión">Remisión</option>
-      </select>
-      <input type="text" placeholder="Transportista" name="transportista" required />
-    </form><div class="acciones">
-  <button onclick="descargarExcel()">Exportar a Excel</button>
-  <button onclick="window.print()">Imprimir</button>
-</div>
+</head>
+<body>
+  <h1>ALDISAN-KSK REPORTE DE EMBARQUE</h1>
 
-<table id="tablaReporte">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>Descripción</th>
-      <th>Lote</th>
-      <th>Caducidad</th>
-      <th>Cajas x Tarima</th>
-      <th>Pz x Caja</th>
-      <th>Pz x Tarima</th>
-    </tr>
-  </thead>
-  <tbody>
-    <!-- Datos QR escaneados se insertarán aquí -->
-  </tbody>
-</table>
+  <!-- FORMULARIO -->
+  <div class="no-print">
+    <input type="text" id="operador" placeholder="Operador">
+    <input type="text" id="placas" placeholder="Placas">
+    <select id="unidad">
+      <option value="">Selecciona Unidad</option>
+      <option value="Camioneta">Camioneta</option>
+      <option value="Torton">Torton</option>
+      <option value="Tráiler">Tráiler</option>
+    </select>
+    <input type="text" id="transportista" placeholder="Transportista">
+    <input type="text" id="factura" placeholder="Factura/Remisión">
+    <br>
+    <button onclick="startScanner()">Escanear QR</button>
+    <div id="reader" style="width: 300px; margin: 20px auto;"></div>
+  </div>
 
-  </main>
-</body></html>
+  <!-- INFORMACIÓN FORMULARIO (para impresión) -->
+  <div id="formInfo" class="print-only" style="margin-top: 20px; text-align:left; padding-left:20px;">
+    <p><strong>Operador:</strong> <span id="printOperador"></span></p>
+    <p><strong>Placas:</strong> <span id="printPlacas"></span></p>
+    <p><strong>Unidad:</strong> <span id="printUnidad"></span></p>
+    <p><strong>Transportista:</strong> <span id="printTransportista"></span></p>
+    <p><strong>Factura/Remisión:</strong> <span id="printFactura"></span></p>
+  </div>
+
+  <!-- TABLA -->
+  <table id="tabla">
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Descripción</th>
+        <th>Lote</th>
+        <th>Caducidad</th>
+        <th>Cajas</th>
+        <th>Pz/Caja</th>
+        <th>Pz Total</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- FIRMAS -->
+  <div class="signatures">
+    <div class="signature-block">
+      <hr>
+      <div id="firmaOperador">Operador</div>
+    </div>
+    <div class="signature-block">
+      <hr>
+      VÍCTOR GONZÁLES
+    </div>
+  </div>
+
+  <!-- BOTONES -->
+  <div class="no-print" style="margin-top: 20px;">
+    <button onclick="exportarExcel()">Exportar Excel</button>
+    <button onclick="window.print()">Imprimir</button>
+  </div>
+
+  <script>
+    let productos = new Set();
+
+    function startScanner() {
+      const html5QrCode = new Html5Qrcode("reader");
+      const config = { fps: 10, qrbox: 250 };
+
+      html5QrCode.start(
+        { facingMode: "environment" },
+        config,
+        (text) => {
+          if (productos.has(text)) {
+            alert("Este código ya fue escaneado.");
+            return;
+          }
+          productos.add(text);
+          const datos = text.split('\t');
+          if (datos.length < 9) return;
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${datos[2]}</td>
+            <td>${datos[3]}</td>
+            <td>${datos[4]}</td>
+            <td>${datos[5]}</td>
+            <td>${datos[7]}</td>
+            <td>${datos[6]}</td>
+            <td>${datos[8]}</td>`;
+          document.querySelector("#tabla tbody").appendChild(row);
+          html5QrCode.stop();
+        },
+        (err) => console.warn(err)
+      );
+    }
+
+    function exportarExcel() {
+      const table = document.getElementById("tabla");
+      const wb = XLSX.utils.table_to_book(table, { sheet: "ALDISAN-KSK REPORTE DE EMBARQUE" });
+      XLSX.writeFile(wb, "ALDISAN-KSK_REPORTE_EMBARQUE.xlsx");
+    }
+
+    window.onbeforeprint = () => {
+      document.getElementById("printOperador").innerText = document.getElementById("operador").value;
+      document.getElementById("printPlacas").innerText = document.getElementById("placas").value;
+      document.getElementById("printUnidad").innerText = document.getElementById("unidad").value;
+      document.getElementById("printTransportista").innerText = document.getElementById("transportista").value;
+      document.getElementById("printFactura").innerText = document.getElementById("factura").value;
+      document.getElementById("firmaOperador").innerText = document.getElementById("operador").value;
+    };
+  </script>
+</body>
+</html>
