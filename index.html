@@ -3,29 +3,35 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ALDISAN-KSK REPORTE DE EMBARQUE</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: #0d1117;
+      background-color: #0b1220;
       color: #fff;
-      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
       padding: 20px;
+      text-align: center;
     }
     h1 {
       color: #00bfff;
-      text-align: center;
+      font-size: 28px;
     }
     input, select, button {
-      display: block;
-      margin: 10px auto;
+      margin: 8px;
       padding: 10px;
-      width: 90%;
-      max-width: 400px;
+      font-size: 16px;
       border-radius: 5px;
       border: none;
-      font-size: 16px;
+    }
+    input, select {
+      width: 90%;
+      max-width: 400px;
+    }
+    button {
+      background-color: #00bfff;
+      color: white;
+      cursor: pointer;
     }
     table {
       width: 100%;
@@ -34,143 +40,127 @@
       background-color: #fff;
       color: #000;
     }
+    table, th, td {
+      border: 1px solid #000;
+    }
     th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: center;
+      padding: 10px;
+      font-size: 14px;
     }
-    .btn {
-      background-color: #00bfff;
-      color: #fff;
-      font-weight: bold;
-    }
-    .signatures {
-      margin-top: 40px;
-      display: flex;
-      justify-content: space-around;
-      color: black;
-    }
-    .signatures div {
-      text-align: center;
-    }
-    #reader {
-      width: 100%;
-      max-width: 400px;
-      margin: auto;
-      display: none;
+    #html5-qrcode-button-camera-permission, #html5-qrcode-anchor-scan-type-change {
+      display: none !important;
     }
     @media print {
-      body { background: white; color: black; }
-      input, button, select, #reader, .btn { display: none !important; }
-      .signatures { page-break-before: always; }
+      body { background-color: #fff; color: #000; }
+      button, input, select, #reader { display: none !important; }
+      table { page-break-inside: avoid; }
     }
   </style>
 </head>
 <body>
   <h1>ALDISAN – Reporte de Carga de Tarimas</h1>
-  <input type="text" id="operador" placeholder="Nombre del Operador" />
-  <input type="text" id="placas" placeholder="Placas" />
-  <select id="unidad">
-    <option value="">Tipo de Unidad</option>
-    <option>CAMIONETA</option>
-    <option>TORTON</option>
-    <option>TRAILER</option>
-  </select>
-  <input type="text" id="factura" placeholder="Factura o Remisión" />
-  <input type="text" id="transportista" placeholder="Transportista" /><button class="btn" onclick="startQRScanner()">Escanear QR</button>
-
-  <div id="reader"></div>  <table id="tabla">
+  <form id="infoForm">
+    <input type="text" id="operador" placeholder="Nombre del Operador" required><br>
+    <input type="text" id="placas" placeholder="Placas" required><br>
+    <select id="unidad" required>
+      <option value="">Tipo de Unidad</option>
+      <option value="Camioneta">Camioneta</option>
+      <option value="Torton">Torton</option>
+      <option value="Tráiler">Tráiler</option>
+    </select><br>
+    <input type="text" id="factura" placeholder="Factura/Remisión" required><br>
+    <input type="text" id="transportista" placeholder="Transportista" required><br>
+  </form>
+  <button onclick="startScanner()">Escanear QR</button>
+  <div id="reader" style="width: 300px; margin: auto; display:none;"></div>  <table id="tabla">
     <thead>
       <tr>
-        <th>Código</th>
-        <th>Descripción</th>
-        <th>Lote</th>
-        <th>Caducidad</th>
-        <th>Cajas</th>
-        <th>Pz/Caja</th>
-        <th>Pz Total</th>
+        <th>Código</th><th>Descripción</th><th>Lote</th><th>Caducidad</th>
+        <th>Cajas</th><th>Pz/Caja</th><th>Pz Total</th>
       </tr>
     </thead>
-    <tbody id="contenido">
-      <tr><td colspan="7">Sin productos aún</td></tr>
-    </tbody>
-  </table>  <div class="signatures">
-    <div>
-      ___________________________<br>
-      <span id="firmaOperador">Operador</span>
-    </div>
-    <div>
-      ___________________________<br>
-      VÍCTOR GONZÁLES
-    </div>
-  </div><button class="btn" onclick="exportarExcel()">Exportar Excel</button> <button class="btn" onclick="window.print()">Imprimir</button>
+    <tbody id="tbody"></tbody>
+  </table>  <br>
+  <button onclick="exportarExcel()">Exportar Excel</button>
+  <button onclick="window.print()">Imprimir</button>  <script>
+    let productos = [];
+    const escaneados = new Set();
 
-  <script>
-    const productos = [];
-    const uids = new Set();
-
-    function startQRScanner() {
-      const scanner = new Html5Qrcode("reader");
+    function startScanner() {
       document.getElementById("reader").style.display = "block";
-
-      scanner.start({ facingMode: "environment" }, {
-        fps: 10,
-        qrbox: 250
-      }, qrCodeMessage => {
-        scanner.stop();
-        document.getElementById("reader").style.display = "none";
-        agregarProducto(qrCodeMessage);
-      }, error => {});
-
-      setTimeout(() => {
-        scanner.stop().catch(() => {});
-        document.getElementById("reader").style.display = "none";
-      }, 10000);
-    }
-
-    function agregarProducto(textoQR) {
-      const [operador, uid, codigo, descripcion, lote, caducidad, cajas, pzxcaja, total] = textoQR.split("\t");
-      if (uids.has(uid)) return;
-      uids.add(uid);
-      productos.push({ codigo, descripcion, lote, caducidad, cajas, pzxcaja, total });
-      actualizarTabla();
+      const html5QrCode = new Html5Qrcode("reader");
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        qrCodeMessage => {
+          if (escaneados.has(qrCodeMessage)) return;
+          escaneados.add(qrCodeMessage);
+          const data = qrCodeMessage.split('\t');
+          if (data.length === 9) {
+            const [op, uid, codigo, descripcion, lote, caducidad, cajas, pzCaja, pzTotal] = data;
+            productos.push({codigo, descripcion, lote, caducidad, cajas, pzCaja, pzTotal});
+            actualizarTabla();
+          }
+        },
+        error => {}
+      ).then(() => {
+        setTimeout(() => html5QrCode.stop().then(() => {
+          document.getElementById("reader").style.display = "none";
+        }), 10000);
+      });
     }
 
     function actualizarTabla() {
-      const cuerpo = document.getElementById("contenido");
-      cuerpo.innerHTML = "";
+      const tbody = document.getElementById("tbody");
+      tbody.innerHTML = "";
       productos.forEach(p => {
-        const fila = `<tr>
-          <td>${p.codigo}</td>
-          <td>${p.descripcion}</td>
-          <td>${p.lote}</td>
-          <td>${p.caducidad}</td>
-          <td>${p.cajas}</td>
-          <td>${p.pzxcaja}</td>
-          <td>${p.total}</td>
-        </tr>`;
-        cuerpo.innerHTML += fila;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${p.codigo}</td><td>${p.descripcion}</td><td>${p.lote}</td>
+                        <td>${p.caducidad}</td><td>${p.cajas}</td><td>${p.pzCaja}</td><td>${p.pzTotal}</td>`;
+        tbody.appendChild(tr);
       });
-      document.getElementById("firmaOperador").innerText = document.getElementById("operador").value;
     }
 
     function exportarExcel() {
-      const data = productos.map(p => ([
-        document.getElementById("operador").value,
-        document.getElementById("placas").value,
-        document.getElementById("unidad").value,
-        document.getElementById("factura").value,
-        document.getElementById("transportista").value,
-        p.codigo, p.descripcion, p.lote, p.caducidad, p.cajas, p.pzxcaja, p.total
-      ]));
-
+      const form = {
+        Operador: document.getElementById("operador").value,
+        Placas: document.getElementById("placas").value,
+        Unidad: document.getElementById("unidad").value,
+        Factura: document.getElementById("factura").value,
+        Transportista: document.getElementById("transportista").value,
+      };
       const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.aoa_to_sheet([
-        ["Operador", "Placas", "Unidad", "Factura/Remisión", "Transportista", "Codigo", "Descripcion", "Lote", "Caducidad", "Cajas", "Pz/Caja", "Pz Total"],
-        ...data
-      ]);
+      const wsData = [
+        ["ALDISAN – REPORTE DE EMBARQUE"],
+        ["Operador", form.Operador],
+        ["Placas", form.Placas],
+        ["Unidad", form.Unidad],
+        ["Factura/Remisión", form.Factura],
+        ["Transportista", form.Transportista],
+        [],
+        ["Código", "Descripción", "Lote", "Caducidad", "Cajas", "Pz/Caja", "Pz Total"]
+      ];
+      productos.forEach(p => wsData.push([p.codigo, p.descripcion, p.lote, p.caducidad, p.cajas, p.pzCaja, p.pzTotal]));
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
       XLSX.utils.book_append_sheet(wb, ws, "Reporte");
       XLSX.writeFile(wb, "reporte_embarque.xlsx");
     }
+
+    window.onafterprint = () => {
+      document.getElementById("reader").style.display = "none";
+    };
+  </script>  <div style="margin-top: 80px; display: flex; justify-content: space-around;">
+    <div style="text-align:center">
+      _______________________<br>
+      <span id="firmaOperador">Operador</span>
+    </div>
+    <div style="text-align:center">
+      _______________________<br>
+      VÍCTOR GONZÁLES
+    </div>
+  </div>  <script>
+    document.getElementById("operador").addEventListener("input", e => {
+      document.getElementById("firmaOperador").innerText = e.target.value || "Operador";
+    });
   </script></body>
 </html>
