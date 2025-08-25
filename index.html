@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="es">
+<!DOCTYPE html><html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -73,10 +72,7 @@
   </style>
 </head>
 <body>
-  <h1>ALDISAN – Reporte de Carga de Tarimas</h1>
-
-  <!-- FORMULARIO -->
-  <div class="no-print">
+  <h1>ALDISAN – Reporte de Carga de Tarimas</h1>  <!-- FORMULARIO -->  <div class="no-print">
     <input type="text" id="operador" placeholder="Operador">
     <input type="text" id="placas" placeholder="Placas">
     <select id="unidad">
@@ -90,10 +86,13 @@
     <br>
     <button onclick="startScanner()">Escanear QR</button>
     <div id="reader" style="width: 300px; margin: 20px auto;"></div>
-  </div>
-
-  <!-- TABLA -->
-  <table id="tabla">
+  </div>  <!-- INFORMACIÓN FORMULARIO (para impresión) -->  <div id="formInfo" class="print-only" style="margin-top: 20px; text-align:left; padding-left:20px;">
+    <p><strong>Operador:</strong> <span id="printOperador"></span></p>
+    <p><strong>Placas:</strong> <span id="printPlacas"></span></p>
+    <p><strong>Unidad:</strong> <span id="printUnidad"></span></p>
+    <p><strong>Transportista:</strong> <span id="printTransportista"></span></p>
+    <p><strong>Factura/Remisión:</strong> <span id="printFactura"></span></p>
+  </div>  <!-- TABLA -->  <table id="tabla">
     <thead>
       <tr>
         <th>Código</th>
@@ -106,19 +105,7 @@
       </tr>
     </thead>
     <tbody></tbody>
-  </table>
-
-  <!-- INFORMACIÓN FORMULARIO (para impresión) -->
-  <div id="formInfo" class="print-only" style="margin-top: 20px; text-align:left; padding-left:20px;">
-    <p><strong>Operador:</strong> <span id="printOperador"></span></p>
-    <p><strong>Placas:</strong> <span id="printPlacas"></span></p>
-    <p><strong>Unidad:</strong> <span id="printUnidad"></span></p>
-    <p><strong>Transportista:</strong> <span id="printTransportista"></span></p>
-    <p><strong>Factura/Remisión:</strong> <span id="printFactura"></span></p>
-  </div>
-
-  <!-- FIRMAS -->
-  <div class="signatures">
+  </table>  <!-- FIRMAS -->  <div class="signatures">
     <div class="signature-block">
       <hr>
       <div id="firmaOperador">Operador</div>
@@ -127,15 +114,10 @@
       <hr>
       VÍCTOR GONZÁLES
     </div>
-  </div>
-
-  <!-- BOTONES -->
-  <div class="no-print" style="margin-top: 20px;">
+  </div>  <!-- BOTONES -->  <div class="no-print" style="margin-top: 20px;">
     <button onclick="exportarExcel()">Exportar Excel</button>
     <button onclick="window.print()">Imprimir</button>
-  </div>
-
-  <script>
+  </div>  <script>
     let productos = new Set();
 
     function startScanner() {
@@ -184,6 +166,5 @@
       document.getElementById("printFactura").innerText = document.getElementById("factura").value;
       document.getElementById("firmaOperador").innerText = document.getElementById("operador").value;
     };
-  </script>
-</body>
+  </script></body>
 </html>
