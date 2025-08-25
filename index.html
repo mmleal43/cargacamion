@@ -1,31 +1,39 @@
 <!DOCTYPE html><html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ALDISAN-KSK REPORTE DE EMBARQUE</title>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     body {
-      background-color: #0b1120;
-      color: white;
       font-family: Arial, sans-serif;
-      padding: 20px;
       margin: 0;
+      padding: 20px;
+      background: #0b1220;
+      color: white;
     }
     h1 {
       text-align: center;
-      color: #00c8ff;
+      color: #00d4ff;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
     }
     input, select, button {
-      display: block;
-      width: 100%;
-      max-width: 300px;
-      margin: 10px auto;
-      padding: 8px;
-      font-size: 16px;
-      border-radius: 6px;
+      padding: 10px;
+      font-size: 1em;
       border: none;
+      border-radius: 5px;
+    }
+    input, select {
+      background: #1e293b;
+      color: white;
     }
     button {
       background-color: #00bfff;
@@ -33,61 +41,68 @@
       font-weight: bold;
       cursor: pointer;
     }
-    button:hover {
-      background-color: #009ad6;
-    }
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
-      text-align: center;
     }
     th, td {
       border: 1px solid #ccc;
-      padding: 6px;
+      padding: 8px;
+      text-align: center;
+      background-color: #1e293b;
+      color: white;
     }
     th {
-      background-color: #1c1f2b;
+      background-color: #334155;
     }
-    .hidden {
-      display: none;
-    }
-    #video {
-      width: 100%;
-      max-width: 400px;
-      margin: auto;
-      display: block;
-    }
-    .firmas {
-      margin-top: 50px;
+    .signature-section {
       display: flex;
       justify-content: space-between;
-      padding: 0 40px;
+      margin-top: 50px;
+      font-size: 0.9em;
+      padding: 0 30px;
     }
-    .firmas span {
-      display: inline-block;
+    .signature-line {
+      border-top: 1px solid #ccc;
+      padding-top: 4px;
       text-align: center;
+      margin-top: 20px;
     }
     @media print {
-      body { background: white; color: black; }
-      button, input, select, #video { display: none; }
-      .firmas { margin-top: 100px; }
+      body {
+        background: white;
+        color: black;
+      }
+      .form-group, #scanButton, #exportExcel, #printButton {
+        display: none;
+      }
+      .signature-section {
+        color: black;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>ALDISAN – Reporte de Carga de Tarimas</h1>  <input id="operador" placeholder="Operador" />
-  <input id="placas" placeholder="Placas" />
-  <select id="unidad">
-    <option value="">Tipo de Unidad</option>
-    <option value="TRAILER">TRAILER</option>
-    <option value="TORTON">TORTON</option>
-    <option value="CAMIONETA">CAMIONETA</option>
-  </select>
-  <input id="transportista" placeholder="Transportista" />
-  <input id="factura" placeholder="Factura / Remisión" /><button onclick="startQRScanner()">Escanear QR</button> <video id="video" class="hidden"></video>
-
-  <table id="tabla">
+  <h1>ALDISAN – Reporte de Carga de Tarimas</h1>  <div class="form-group">
+    <input type="text" id="operador" placeholder="Nombre del Operador">
+    <input type="text" id="placas" placeholder="Placas">
+    <select id="unidad">
+      <option value="">Seleccionar Unidad</option>
+      <option value="Tráiler">Tráiler</option>
+      <option value="Torton">Torton</option>
+      <option value="Camioneta">Camioneta</option>
+    </select>
+    <input type="text" id="remision" placeholder="Factura/Remisión">
+    <input type="text" id="transportista" placeholder="Transportista">
+    <button id="scanButton">Escanear QR</button>
+  </div>  <div id="formInfo" style="text-align:center; margin-bottom: 20px;">
+    <p><strong>Operador:</strong> <span id="infoOperador"></span></p>
+    <p><strong>Placas:</strong> <span id="infoPlacas"></span></p>
+    <p><strong>Unidad:</strong> <span id="infoUnidad"></span></p>
+    <p><strong>Factura/Remisión:</strong> <span id="infoRemision"></span></p>
+    <p><strong>Transportista:</strong> <span id="infoTransportista"></span></p>
+  </div>  <table id="tablaProductos">
     <thead>
       <tr>
         <th>Código</th>
@@ -102,87 +117,36 @@
     <tbody>
       <tr><td colspan="7">Sin productos aún</td></tr>
     </tbody>
-  </table>  <div style="margin-top: 30px; text-align: center;">
-    <button onclick="exportarExcel()">Exportar Excel</button>
-    <button onclick="window.print()">Imprimir</button>
-  </div>  <div class="firmas">
-    <span>
-      __________________________<br>
-      <span id="firmaOperador">Operador</span>
-    </span>
-    <span>
-      __________________________<br>
-      VÍCTOR GONZÁLES
-    </span>
+  </table>  <div class="signature-section">
+    <div class="signature-line"><span id="firmaOperador">Operador</span></div>
+    <div class="signature-line">VÍCTOR GONZÁLES</div>
+  </div>  <div style="text-align:center; margin-top: 20px;">
+    <button id="exportExcel">Exportar Excel</button>
+    <button id="printButton">Imprimir</button>
   </div>  <script>
-    const tabla = document.querySelector("#tabla tbody");
-    const video = document.getElementById("video");
-    let scanned = new Set();
+    const operador = document.getElementById('operador');
+    const placas = document.getElementById('placas');
+    const unidad = document.getElementById('unidad');
+    const remision = document.getElementById('remision');
+    const transportista = document.getElementById('transportista');
 
-    function startQRScanner() {
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-        .then(stream => {
-          video.classList.remove("hidden");
-          video.srcObject = stream;
-          video.setAttribute("playsinline", true);
-          video.play();
-          requestAnimationFrame(scanFrame);
+    const infoOperador = document.getElementById('infoOperador');
+    const infoPlacas = document.getElementById('infoPlacas');
+    const infoUnidad = document.getElementById('infoUnidad');
+    const infoRemision = document.getElementById('infoRemision');
+    const infoTransportista = document.getElementById('infoTransportista');
+    const firmaOperador = document.getElementById('firmaOperador');
 
-          setTimeout(() => {
-            stream.getTracks().forEach(track => track.stop());
-            video.classList.add("hidden");
-          }, 10000);
-        });
-    }
+    const scanButton = document.getElementById('scanButton');
+    scanButton.addEventListener('click', () => {
+      infoOperador.textContent = operador.value;
+      infoPlacas.textContent = placas.value;
+      infoUnidad.textContent = unidad.value;
+      infoRemision.textContent = remision.value;
+      infoTransportista.textContent = transportista.value;
+      firmaOperador.textContent = operador.value;
+    });
 
-    function scanFrame() {
-      if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        const canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const context = canvas.getContext("2d");
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(imageData.data, canvas.width, canvas.height, { inversionAttempts: "dontInvert" });
-
-        if (code) {
-          const datos = code.data.trim().split('\t');
-          const uid = datos[1];
-          if (scanned.has(uid)) return;
-          scanned.add(uid);
-          if (tabla.rows[0].cells[0].innerText === "Sin productos aún") tabla.innerHTML = "";
-          tabla.innerHTML += `
-            <tr>
-              <td>${datos[2]}</td>
-              <td>${datos[3]}</td>
-              <td>${datos[4]}</td>
-              <td>${datos[5]}</td>
-              <td>${datos[7]}</td>
-              <td>${datos[6]}</td>
-              <td>${datos[8]}</td>
-            </tr>
-          `;
-          document.getElementById("firmaOperador").textContent = document.getElementById("operador").value;
-        }
-      }
-      requestAnimationFrame(scanFrame);
-    }
-
-    function exportarExcel() {
-      const datos = [
-        ["Operador", document.getElementById("operador").value],
-        ["Placas", document.getElementById("placas").value],
-        ["Tipo de Unidad", document.getElementById("unidad").value],
-        ["Transportista", document.getElementById("transportista").value],
-        ["Factura / Remisión", document.getElementById("factura").value],
-        []
-      ];
-      const headers = ["Código", "Descripción", "Lote", "Caducidad", "Cajas", "Pz/Caja", "Pz Total"];
-      const filas = [...tabla.querySelectorAll("tr")].map(tr => [...tr.children].map(td => td.innerText));
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.aoa_to_sheet([...datos, headers, ...filas]);
-      XLSX.utils.book_append_sheet(wb, ws, "Reporte");
-      XLSX.writeFile(wb, "reporte_tarimas.xlsx");
-    }
+    document.getElementById('printButton').onclick = () => window.print();
   </script></body>
 </html>
