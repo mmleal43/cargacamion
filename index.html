@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="es">
+<!DOCTYPE html><html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -70,13 +69,15 @@
         display: block;
       }
     }
+    #logo {
+      max-width: 200px;
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
-  <h1>ALDISAN-KSK REPORTE DE EMBARQUE</h1>
-
-  <!-- FORMULARIO -->
-  <div class="no-print">
+  <img id="logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAByUlEQVR42q2UW0iUQRSGv9nd3V27du3cehSrZFEULGDhZ3BgiMFBNkYotjYXWioYiKxEiooRCuLi3BohAREjU18YZbAxFpqJxLbR11HcpJOEnGf3Nz7sPGFJP8czmO+95znPO85/kaTTwK72oVtqZklXLz3yRrih7pEj9OS6IF9HRytfxMBscQBNLEvAHcRh1wBtqHzDOdDNaQefFEMN98OB3zHTd2RcyGlv0Kw8TZzyPnEkMHCIAPDbn4M0mfnMv4szKHmfVYF+qcbLRrq7YO9l+eQReEMu2sYBl02LUAlu1yJ3ivwhOxKNakDwXfOugBd3rhDeMvFM2ku8Af+H04PY6WKwK78AFhD8a4G7AC88Tx2M98TthTdf9bMw+BxVd8OafAn7A19xBiS9A14iW+D0YhAlZbxnYL2HzAbydKO+jpjSwAAAABJRU5ErkJggg==" alt="Logo Aldisan" />
+  <h1>ALDISAN-KSK REPORTE DE EMBARQUE</h1>  <!-- FORMULARIO -->  <div class="no-print">
     <input type="text" id="operador" placeholder="Operador">
     <input type="text" id="placas" placeholder="Placas">
     <select id="unidad">
@@ -90,19 +91,13 @@
     <br>
     <button onclick="startScanner()">Escanear QR</button>
     <div id="reader" style="width: 300px; margin: 20px auto;"></div>
-  </div>
-
-  <!-- INFORMACIÓN FORMULARIO (para impresión) -->
-  <div id="formInfo" class="print-only" style="margin-top: 20px; text-align:left; padding-left:20px;">
+  </div>  <!-- INFORMACIÓN FORMULARIO (para impresión) -->  <div id="formInfo" class="print-only" style="margin-top: 20px; text-align:left; padding-left:20px;">
     <p><strong>Operador:</strong> <span id="printOperador"></span></p>
     <p><strong>Placas:</strong> <span id="printPlacas"></span></p>
     <p><strong>Unidad:</strong> <span id="printUnidad"></span></p>
     <p><strong>Transportista:</strong> <span id="printTransportista"></span></p>
     <p><strong>Factura/Remisión:</strong> <span id="printFactura"></span></p>
-  </div>
-
-  <!-- TABLA -->
-  <table id="tabla">
+  </div>  <!-- TABLA -->  <table id="tabla">
     <thead>
       <tr>
         <th>Código</th>
@@ -115,10 +110,7 @@
       </tr>
     </thead>
     <tbody></tbody>
-  </table>
-
-  <!-- FIRMAS -->
-  <div class="signatures">
+  </table>  <!-- FIRMAS -->  <div class="signatures">
     <div class="signature-block">
       <hr>
       <div id="firmaOperador">Operador</div>
@@ -127,15 +119,10 @@
       <hr>
       VÍCTOR GONZÁLES
     </div>
-  </div>
-
-  <!-- BOTONES -->
-  <div class="no-print" style="margin-top: 20px;">
+  </div>  <!-- BOTONES -->  <div class="no-print" style="margin-top: 20px;">
     <button onclick="exportarExcel()">Exportar Excel</button>
     <button onclick="window.print()">Imprimir</button>
-  </div>
-
-  <script>
+  </div>  <script>
     let productos = new Set();
 
     function startScanner() {
@@ -183,6 +170,5 @@
       document.getElementById("printFactura").innerText = document.getElementById("factura").value;
       document.getElementById("firmaOperador").innerText = document.getElementById("operador").value;
     };
-  </script>
-</body>
+  </script></body>
 </html>
