@@ -5,7 +5,6 @@
   <title>ALDISAN-KSK REPORTE DE EMBARQUE</title>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <style>
     body {
       background: #0c0f1f;
@@ -70,13 +69,19 @@
         display: block;
       }
     }
-    #qrResumen {
-      margin-top: 20px;
+    #flash {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,255,0,0.2);
+      z-index: 9999;
+      display: none;
     }
   </style>
 </head>
 <body>
-  <h1>ALDISAN-KSK REPORTE DE EMBARQUE</h1>  <!-- FORMULARIO -->  <div class="no-print">
+  <h1>ALDISAN-KSK REPORTE DE EMBARQUE</h1>  <div class="no-print">
     <input type="text" id="operador" placeholder="Operador">
     <input type="text" id="placas" placeholder="Placas">
     <select id="unidad">
@@ -90,13 +95,13 @@
     <br>
     <button onclick="startScanner()">Escanear QR</button>
     <div id="reader" style="width: 300px; margin: 20px auto;"></div>
-  </div>  <!-- INFORMACIÓN FORMULARIO (para impresión) -->  <div id="formInfo" class="print-only" style="margin-top: 20px; text-align:left; padding-left:20px;">
+  </div>  <div id="formInfo" class="print-only" style="margin-top: 20px; text-align:left; padding-left:20px;">
     <p><strong>Operador:</strong> <span id="printOperador"></span></p>
     <p><strong>Placas:</strong> <span id="printPlacas"></span></p>
     <p><strong>Unidad:</strong> <span id="printUnidad"></span></p>
     <p><strong>Transportista:</strong> <span id="printTransportista"></span></p>
     <p><strong>Factura/Remisión:</strong> <span id="printFactura"></span></p>
-  </div>  <!-- TABLA -->  <table id="tabla">
+  </div>  <table id="tabla">
     <thead>
       <tr>
         <th>Código</th>
@@ -109,7 +114,7 @@
       </tr>
     </thead>
     <tbody></tbody>
-  </table>  <!-- QR RESUMEN DE CARGA -->  <div id="qrResumen" class="print-only"></div>  <!-- FIRMAS -->  <div class="signatures">
+  </table>  <div class="signatures">
     <div class="signature-block">
       <hr>
       <div id="firmaOperador">Operador</div>
@@ -118,25 +123,40 @@
       <hr>
       VÍCTOR GONZÁLES
     </div>
-  </div>  <!-- BOTONES -->  <div class="no-print" style="margin-top: 20px;">
+  </div>  <div class="no-print" style="margin-top: 20px;">
     <button onclick="exportarExcel()">Exportar Excel</button>
     <button onclick="window.print()">Imprimir</button>
-  </div>  <script>
-    let productos = new Set();
+  </div>  <div id="flash"></div>
+  <audio id="beep" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" preload="auto"></audio>  <script>
+    let productos = [];
+    let html5QrCode;
+    let timer;
+
+    function showFlash() {
+      const flash = document.getElementById("flash");
+      flash.style.display = "block";
+      setTimeout(() => flash.style.display = "none", 150);
+    }
+
+    function resetInactivityTimer() {
+      clearTimeout(timer);
+      timer = setTimeout(() => html5QrCode.stop(), 20000);
+    }
 
     function startScanner() {
-      const html5QrCode = new Html5Qrcode("reader");
+      const beep = document.getElementById("beep");
+      html5QrCode = new Html5Qrcode("reader");
       const config = { fps: 10, qrbox: 250 };
 
       html5QrCode.start(
         { facingMode: "environment" },
         config,
         (text) => {
-          if (productos.has(text)) {
-            alert("Este código ya fue escaneado.");
-            return;
-          }
-          productos.add(text);
+          resetInactivityTimer();
+          beep.play();
+          if (navigator.vibrate) navigator.vibrate(150);
+          showFlash();
+
           const datos = text.split('\t');
           if (datos.length < 9) return;
           const row = document.createElement("tr");
@@ -149,38 +169,16 @@
             <td>${datos[6]}</td>
             <td>${datos[8]}</td>`;
           document.querySelector("#tabla tbody").appendChild(row);
-          html5QrCode.stop();
         },
         (err) => console.warn(err)
       );
+      resetInactivityTimer();
     }
 
     function exportarExcel() {
       const table = document.getElementById("tabla");
       const wb = XLSX.utils.table_to_book(table, { sheet: "ALDISAN-KSK REPORTE DE EMBARQUE" });
       XLSX.writeFile(wb, "ALDISAN-KSK_REPORTE_EMBARQUE.xlsx");
-    }
-
-    function generarQRResumen() {
-      const filas = document.querySelectorAll("#tabla tbody tr");
-      let resumen = "";
-      filas.forEach(row => {
-        const celdas = row.querySelectorAll("td");
-        const data = Array.from(celdas).map(td => td.textContent).join('|');
-        resumen += data + '\n';
-      });
-      const qrDiv = document.getElementById("qrResumen");
-      qrDiv.innerHTML = "";
-      if (resumen.trim().length > 0) {
-        QRCode.toDataURL(resumen, { width: 200, margin: 2 }, function (err, url) {
-          if (!err) {
-            const img = document.createElement("img");
-            img.src = url;
-            img.alt = "QR resumen de carga";
-            qrDiv.appendChild(img);
-          }
-        });
-      }
     }
 
     window.onbeforeprint = () => {
@@ -190,7 +188,6 @@
       document.getElementById("printTransportista").innerText = document.getElementById("transportista").value;
       document.getElementById("printFactura").innerText = document.getElementById("factura").value;
       document.getElementById("firmaOperador").innerText = document.getElementById("operador").value;
-      generarQRResumen();
     };
   </script></body>
 </html>
