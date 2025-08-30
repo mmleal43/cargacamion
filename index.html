@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>ALDISAN-KSK – REPORTE DE EMBARQUE (Tarimas)</title>
+  <title>ALDISAN-KSK – REPORTE DE EMBARQUE</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <!-- Librerías -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -10,61 +10,33 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <style>
-    :root{
-      --c1:#00e5ff; --bg:#0c0f1f; --muted:#93a4b8;
-      --paper-w:21.59cm; --paper-h:27.94cm; /* Carta */
-    }
+    :root{--c1:#00e5ff;--bg:#0c0f1f;--muted:#93a4b8;--paper-w:21.59cm;--paper-h:27.94cm}
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0}
-    body{
-      font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
-      background: radial-gradient(1000px 600px at 50% -200px,#16304a 10%, #0c0f1f 60%, #090c17 100%);
-      color:#e6eef7;
-    }
+    body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#0c0f1f;color:#e6eef7}
     .wrap{max-width:1100px;margin:0 auto;padding:18px}
-    header h1{margin:0 0 8px;text-align:center;color:var(--c1);font-weight:800;font-size:clamp(20px,4vw,32px)}
-    header p{margin:0;text-align:center;color:var(--muted)}
+    header h1{text-align:center;color:var(--c1);font-weight:800}
+    header p{text-align:center;color:var(--muted)}
     .grid{display:grid;gap:16px;margin-top:16px;grid-template-columns:1.1fr 1fr}
-    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}}
     .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px}
-    .card h2{margin:0 0 10px}
-    #reader{width:100%;min-height:320px;background:#0b1220;border:1px solid rgba(255,255,255,.1);border-radius:12px;position:relative;overflow:hidden}
-    .scan-flash{position:absolute;inset:0;background:rgba(0,255,170,.18);box-shadow:inset 0 0 0 2px rgba(0,255,170,.45);opacity:0;transform:scale(1.02);transition:opacity .15s,transform .25s}
-    .scan-flash.show{opacity:1;transform:scale(1)}
-    .idle-overlay{position:absolute;inset:0;display:none;place-items:center;background:rgba(2,8,23,.85)}
-    .idle-overlay.active{display:grid}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    @media (max-width:700px){.row{grid-template-columns:1fr}}
-    label{font-size:12px;color:#b8c6d9;margin-bottom:6px;display:block}
-    input,select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#0f172a;color:#e6eef7}
-    .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
-    button{border:none;border-radius:12px;padding:10px 14px;cursor:pointer}
-    .primary{background:#00e5ff;color:#00131a;font-weight:700}
-    .success{background:#00d26a;color:#001a0d;font-weight:700}
-    .ghost{background:#0f2438;color:#fff;border:1px solid rgba(255,255,255,.12)}
-    .danger{background:#ff4d4d;color:#2a0000;font-weight:700}
     table{width:100%;border-collapse:collapse;margin-top:10px;background:#0d1526}
     th,td{border:1px solid rgba(255,255,255,.1);padding:8px 10px;text-align:left}
     th{background:#162036;color:#a9c8ff}
     #qrCarga{width:140px;height:140px;background:#fff;border-radius:8px;padding:6px}
     footer{margin:18px 0 8px;text-align:center;color:#aab8cc;font-size:12px}
-
     /* IMPRESIÓN */
     @media print{
-      body{background:#fff;color:#000}
+      body{background:#fff;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
       .wrap{max-width:none;padding:0}
       .grid, header p, .actions, #reader, .card:not(.print-only){display:none!important}
       #printable{display:block!important}
     }
-    #printable{
-      display:none;background:#fff;color:#000;width:var(--paper-w);min-height:var(--paper-h);
-      margin:0 auto;padding:1.2cm;font-size:12pt;line-height:1.2
-    }
-    #printable h1{margin:0 0 .6cm;font-size:18pt;color:#00a8c7;text-align:center}
+    @page{size:Letter;margin:12mm}
+    #printable{display:none;background:#fff;color:#000;width:var(--paper-w);min-height:var(--paper-h);margin:0 auto;padding:1.2cm;font-size:12pt}
+    #printable h1{text-align:center;color:#00a8c7}
     #printable .meta{display:grid;grid-template-columns:1.5fr .9fr 3.2cm;gap:.5cm;margin:.2cm 0 .4cm}
     #printable .box{border:1px solid #000;padding:.35cm;border-radius:6px}
-    /* Cuadro del QR fijo + canvas centrado */
-    #printable #qrBox{border:1px solid #000;border-radius:6px;padding:.2cm;display:flex;align-items:center;justify-content:center}
+    #printable #qrBox{border:1px solid #000;padding:.2cm;display:flex;align-items:center;justify-content:center}
     #printable #qrInner{width:3.2cm;height:3.2cm;display:flex;align-items:center;justify-content:center;overflow:hidden}
     #printable #qrInner canvas{max-width:100%;max-height:100%;display:block;margin:auto}
     #printable table{width:100%;border-collapse:collapse;margin-top:.5cm;font-size:11pt}
@@ -81,263 +53,85 @@
     </header>
 
     <div class="grid">
-      <!-- 1) Escáner -->
+      <!-- Escáner -->
       <section class="card">
         <h2>1) Escáner QR</h2>
-        <div id="reader">
-          <div class="scan-flash" id="scanFlash"></div>
-          <div class="idle-overlay" id="idleOverlay">
-            <div style="text-align:center;color:#e6eef7">
-              <div style="font-weight:700;font-size:18px;margin-bottom:6px">Cámara pausada por inactividad</div>
-              <button id="btnResume" class="ghost">Reactivar cámara</button>
-            </div>
-          </div>
-        </div>
+        <div id="reader"></div>
         <div class="actions">
-          <button id="btnStart" class="primary">Iniciar cámara</button>
-          <button id="btnStop" class="ghost">Detener cámara</button>
-          <select id="cameraSelect" class="ghost" title="Cámara"></select>
+          <button id="btnStart">Iniciar cámara</button>
+          <button id="btnStop">Detener cámara</button>
+          <select id="cameraSelect"></select>
         </div>
-        <div style="margin-top:8px;color:#cfe6ff">Total escaneos: <b id="totalCount">0</b> · Cámara: <b id="camStatus">Detenida</b></div>
+        <div>Total escaneos: <b id="totalCount">0</b> · Cámara: <b id="camStatus">Detenida</b></div>
       </section>
 
-      <!-- 2) Datos -->
+      <!-- Datos -->
       <section class="card">
         <h2>2) Datos de embarque</h2>
-        <div class="row">
-          <div><label>Operador</label><input id="inpOperador" placeholder="Nombre del operador" /></div>
-          <div><label>Placas</label><input id="inpPlacas" placeholder="ABC-123-X" /></div>
+        <div><label>Operador</label><input id="inpOperador"></div>
+        <div><label>Placas</label><input id="inpPlacas"></div>
+        <div><label>Unidad</label><select id="selUnidad"><option>Camioneta</option><option>Tráiler</option><option>Torton</option><option>Otro</option></select></div>
+        <div><label>Factura/Pedimento</label><input id="inpFactura"></div>
+        <div style="margin-top:12px;display:flex;gap:12px;align-items:center">
+          <div id="qrCarga"></div>
+          <div style="color:#aaa">El QR se añade a la impresión automáticamente</div>
         </div>
-        <div class="row" style="margin-top:10px">
-          <div>
-            <label>Tipo de unidad</label>
-            <select id="selUnidad">
-              <option value="Camioneta">Camioneta</option>
-              <option value="Tráiler">Tráiler</option>
-              <option value="Torton">Torton</option>
-              <option value="Otro">Otro</option>
-            </select>
-          </div>
-          <div><label>Factura / Pedimento</label><input id="inpFactura" placeholder="Factura o Pedimento" /></div>
-        </div>
-
-        <div style="margin-top:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-          <div>
-            <div style="font-size:12px;color:#b7c6db;margin-bottom:6px">QR del embarque (se imprime)</div>
-            <div id="qrCarga"></div>
-          </div>
-          <div style="color:#b7c6db;max-width:420px">
-            Este QR codifica operador, placas, unidad, factura/pedimento y todas las tarimas. Se añade a la impresión automáticamente.
-          </div>
-        </div>
-
         <div class="actions">
-          <button class="success" id="btnExportXLSX">Exportar Excel</button>
-          <button class="ghost"   id="btnExportCSV">Exportar CSV</button>
-          <button class="primary" id="btnPrint">Imprimir / Guardar PDF</button>
-          <button class="danger"  id="btnClear">Borrar todo</button>
+          <button id="btnExportXLSX">Exportar Excel</button>
+          <button id="btnExportCSV">Exportar CSV</button>
+          <button id="btnPrint">Imprimir / Guardar PDF</button>
+          <button id="btnClear">Borrar todo</button>
         </div>
       </section>
     </div>
 
-    <!-- 3) Tabla -->
+    <!-- Tabla -->
     <section class="card" style="margin-top:16px">
       <h2>3) Tarimas escaneadas</h2>
       <table>
-        <thead><tr><th>#</th><th>Contenido QR</th><th>Fecha/Hora</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>#</th><th>Contenido QR</th><th>Fecha/Hora</th></tr></thead>
         <tbody id="tbody"></tbody>
       </table>
     </section>
 
-    <!-- Vista de impresión (SIN notas) -->
-    <section id="printable" class="print-only">
+    <!-- Printable -->
+    <section id="printable">
       <h1>ALDISAN-KSK · REPORTE DE EMBARQUE</h1>
       <div class="meta">
         <div class="box">
           <b>Operador:</b> <span id="pOperador"></span><br>
           <b>Placas:</b> <span id="pPlacas"></span><br>
-          <b>Tipo de unidad:</b> <span id="pUnidad"></span><br>
-          <b>Factura/Pedimento:</b> <span id="pFactura"></span><br>
+          <b>Unidad:</b> <span id="pUnidad"></span><br>
+          <b>Factura:</b> <span id="pFactura"></span><br>
           <b>Fecha reporte:</b> <span id="pFecha"></span>
         </div>
         <div class="box">
-          <b>Total tarimas escaneadas:</b> <span id="pTotal"></span><br>
-          <b>Código de embarque:</b> <span id="pCodigo"></span>
+          <b>Total tarimas:</b> <span id="pTotal"></span><br>
+          <b>Código embarque:</b> <span id="pCodigo"></span>
         </div>
         <div id="qrBox"><div id="qrInner"></div></div>
       </div>
-
-      <table>
-        <thead><tr><th>#</th><th>Contenido QR</th><th>Fecha/Hora</th></tr></thead>
-        <tbody id="pTbody"></tbody>
-      </table>
-
-      <div class="firmas">
-        <div class="firma" id="pFirmaOperador">OPERADOR</div>
-        <div class="firma">VÍCTOR GONZÁLES</div>
-      </div>
+      <table><thead><tr><th>#</th><th>Contenido QR</th><th>Fecha/Hora</th></tr></thead><tbody id="pTbody"></tbody></table>
+      <div class="firmas"><div class="firma" id="pFirmaOperador">OPERADOR</div><div class="firma">VÍCTOR GONZÁLES</div></div>
     </section>
 
     <footer>© ALDISAN-KSK · Herramienta local de reporte de tarimas</footer>
   </div>
 
   <script>
-  /* ==== Helpers ==== */
-  const $  = (s,r=document)=>r.querySelector(s);
-  const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
-  const pad=n=>String(n).padStart(2,'0');
-  const fmt=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-  const uid=()=>Math.random().toString(36).slice(2)+Date.now().toString(36);
-
-  // beep sin archivos
-  const beep = (()=>{let ctx;return(ms=120,f=880)=>{try{ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();const o=ctx.createOscillator(),g=ctx.createGain();o.type='square';o.frequency.value=f;o.connect(g);g.connect(ctx.destination);g.gain.setValueAtTime(0.03,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+ms/1000);o.start();o.stop(ctx.currentTime+ms/1000);}catch{}}})();
-
-  /* ==== Estado ==== */
-  const state={scans:[],form:{operador:"",placas:"",unidad:"Camioneta",factura:""},lastScanText:null,lastScanAt:0};
-  const LS="reporteTarimas_v1";
-  const save=()=>{localStorage.setItem(LS,JSON.stringify(state));$("#totalCount").textContent=state.scans.length;refreshQR();};
-  const load=()=>{try{const raw=localStorage.getItem(LS); if(!raw) return; const s=JSON.parse(raw); if(s.scans)state.scans=s.scans; if(s.form)Object.assign(state.form,s.form);}catch{}};
-
-  function renderForm(){ $("#inpOperador").value=state.form.operador; $("#inpPlacas").value=state.form.placas; $("#selUnidad").value=state.form.unidad; $("#inpFactura").value=state.form.factura; }
-  function renderTable(){
-    const tb=$("#tbody"); tb.innerHTML="";
-    state.scans.forEach((s,i)=>{const tr=document.createElement("tr");
-      tr.innerHTML=`<td>${i+1}</td><td style="word-break:break-word">${s.text}</td><td>${fmt(new Date(s.ts))}</td><td><button class="danger" data-id="${s.id}">Eliminar</button></td>`;
-      tb.appendChild(tr);
-    });
-    $$("#tbody button.danger").forEach(b=>b.onclick=()=>{state.scans=state.scans.filter(x=>x.id!==b.dataset.id);save();renderTable();});
-  }
-
-  /* ==== Payload + QR ==== */
-  const getPayload=()=>({meta:{v:1,generatedAt:new Date().toISOString()},...state.form,total:state.scans.length,items:state.scans.map(s=>({text:s.text,ts:s.ts}))});
-
-  function drawQR(el,size,text){
-    el.innerHTML=""; // limpia (qrcodejs inserta <canvas> o <img>)
-    new QRCode(el,{text,width:size,height:size,correctLevel:QRCode.CorrectLevel.M});
-  }
-
-  function refreshQR(){
-    const payload=JSON.stringify(getPayload());
-    // QR pantalla
-    drawQR($("#qrCarga"),140,payload);
-    // QR impresión (se ajusta al cuadro)
-    const inner=$("#qrInner");
-    if(inner){
-      const size=Math.floor(Math.min(inner.clientWidth,inner.clientHeight));
-      drawQR(inner,size,payload);
-    }
-  }
-
-  /* ==== Impresión (regenerar TODO justo antes) ==== */
-  function preparePrint(){
-    $("#pOperador").textContent=state.form.operador||"—";
-    $("#pPlacas").textContent=state.form.placas||"—";
-    $("#pUnidad").textContent=state.form.unidad||"—";
-    $("#pFactura").textContent=state.form.factura||"—";
-    $("#pFecha").textContent=fmt(new Date());
-    $("#pTotal").textContent=state.scans.length;
-    $("#pCodigo").textContent=(state.form.operador||"-").slice(0,3).toUpperCase()+"-"+(state.form.placas||"---");
-    $("#pFirmaOperador").textContent=(state.form.operador?.trim()?state.form.operador.toUpperCase():"OPERADOR");
-    const pt=$("#pTbody"); pt.innerHTML="";
-    state.scans.forEach((s,i)=>{const tr=document.createElement("tr"); tr.innerHTML=`<td>${i+1}</td><td>${s.text}</td><td>${fmt(new Date(s.ts))}</td>`; pt.appendChild(tr);});
-    // vuelve a generar QR en el DOM visible de impresión
-    refreshQR();
-  }
-
-  // Android/Chrome a veces dispara el render antes: aseguramos con onbeforeprint y matchMedia
-  window.onbeforeprint=preparePrint;
-  const mql=window.matchMedia && window.matchMedia('print');
-  if(mql && mql.addListener){ mql.addListener(e=>{ if(e.matches) preparePrint(); }); }
-
-  /* ==== Exportadores ==== */
-  function makeAOA(){
-    const aoa=[
-      ["ALDISAN-KSK REPORTE DE EMBARQUE"],
-      ["Operador",state.form.operador],["Placas",state.form.placas],
-      ["Tipo de unidad",state.form.unidad],["Factura/Pedimento",state.form.factura],
-      ["Fecha de exportación",fmt(new Date())],[],
-      ["#","Contenido QR","Fecha/Hora"]
-    ];
-    state.scans.forEach((s,i)=>aoa.push([i+1,s.text,fmt(new Date(s.ts))]));
-    return aoa;
-  }
-
-  function exportCSV(aoa, name){
-    const csv=aoa.map(r=>r.map(v=>{v=(v==null)?"":String(v); v=v.replace(/"/g,'""'); return /[",\n]/.test(v)?`"${v}"`:v;}).join(",")).join("\n");
-    const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"}); const url=URL.createObjectURL(blob);
-    const a=document.createElement("a"); a.href=url; a.download=name||"reporte_embarque.csv"; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  }
-
-  function exportXLSX(){
-    const aoa=makeAOA();
-    try{
-      if(typeof XLSX!=="undefined" && XLSX?.utils?.aoa_to_sheet){
-        const ws=XLSX.utils.aoa_to_sheet(aoa);
-        ws['!cols']=[{wch:5},{wch:80},{wch:20}]; // anchos
-        const wb=XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb,ws,"Embarque");
-        XLSX.writeFile(wb,"reporte_embarque.xlsx");
-      }else{
-        exportCSV(aoa,"reporte_embarque.csv");
-        alert("No se cargó la librería de Excel; se generó CSV de respaldo.");
-      }
-    }catch(err){
-      console.error(err);
-      exportCSV(aoa,"reporte_embarque.csv");
-      alert("Hubo un problema al exportar a Excel. Se generó CSV de respaldo.");
-    }
-  }
-
-  /* ==== Escáner ==== */
-  let scanner=null,lastActivity=Date.now(),idleTimer=null; const IDLE=20000;
-  const $flash=$("#scanFlash"),$overlay=$("#idleOverlay"),$status=$("#camStatus");
-
-  async function listCameras(){ try{ const dev=await Html5Qrcode.getCameras(); const sel=$("#cameraSelect"); sel.innerHTML=""; dev.forEach((d,i)=>{const o=document.createElement("option"); o.value=d.id; o.textContent=d.label||`Cámara ${i+1}`; sel.appendChild(o);}); }catch{} }
-
-  function startIdleWatch(){ stopIdleWatch(); idleTimer=setInterval(()=>{ if(!scanner) return; if(Date.now()-lastActivity>IDLE){ pauseIdle(); } },1000); }
-  function stopIdleWatch(){ if(idleTimer){clearInterval(idleTimer); idleTimer=null;} }
-
-  async function startCam(){
-    if(scanner){ try{await scanner.stop();}catch{} scanner=null; }
-    const cam=$("#cameraSelect").value || { facingMode:{ exact:"environment" } };
-    scanner=new Html5Qrcode("reader",{verbose:false});
-    const cfg={fps:10,qrbox:{width:260,height:260},rememberLastUsedCamera:true,aspectRatio:1.333};
-    $status.textContent="Iniciando…";
-    try{
-      await scanner.start(cam,cfg,(txt)=>{
-        const now=Date.now();
-        if(txt===state.lastScanText && (now-state.lastScanAt)<1200){ lastActivity=now; return; }
-        state.lastScanText=txt; state.lastScanAt=now; lastActivity=now;
-        $flash.classList.add("show"); setTimeout(()=> $flash.classList.remove("show"),160); beep(100,1200); try{navigator.vibrate&&navigator.vibrate(80);}catch{}
-        state.scans.push({id:uid(),text:txt,ts:new Date().toISOString()});
-        save(); renderTable();
-      }, err=>{});
-      $status.textContent="Activa"; $("#btnStart").disabled=true; $("#btnStop").disabled=false; $overlay.classList.remove("active"); lastActivity=Date.now(); startIdleWatch();
-    }catch(e){ alert("No se pudo iniciar la cámara. Revisa permisos del navegador."); $status.textContent="Error"; }
-  }
-  async function stopCam(){ stopIdleWatch(); if(scanner){try{await scanner.stop();}catch{} try{await scanner.clear();}catch{} scanner=null;} $("#btnStart").disabled=false; $("#btnStop").disabled=true; $status.textContent="Detenida"; }
-  async function pauseIdle(){ stopIdleWatch(); if(scanner){ try{await scanner.pause(true);}catch{} $overlay.classList.add("active"); $status.textContent="Pausada"; } }
-  async function resumeIdle(){ if(scanner){ try{await scanner.resume();}catch{} $overlay.classList.remove("active"); $status.textContent="Activa"; lastActivity=Date.now(); startIdleWatch(); } else { startCam(); } }
-
-  /* ==== UI ==== */
-  $("#btnStart").onclick=startCam; $("#btnStop").onclick=stopCam; $("#btnResume").onclick=resumeIdle; $("#cameraSelect").onchange=startCam;
-  $("#btnExportXLSX").onclick=exportXLSX;
-  $("#btnExportCSV").onclick=()=>exportCSV(makeAOA(),"reporte_embarque.csv");
-  $("#btnPrint").onclick=()=>{ preparePrint(); // aseguramos layout antes de abrir diálogo
-    requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(()=>window.print(),60)));
-  };
-  $("#btnClear").onclick=()=>{ if(confirm("¿Borrar TODO?")){ state.scans=[]; state.form={operador:"",placas:"",unidad:"Camioneta",factura:""}; save(); renderForm(); renderTable(); } };
-
-  $("#inpOperador").oninput=e=>{state.form.operador=e.target.value; save();};
-  $("#inpPlacas").oninput=e=>{state.form.placas=e.target.value; save();};
-  $("#selUnidad").onchange=e=>{state.form.unidad=e.target.value; save();};
-  $("#inpFactura").oninput=e=>{state.form.factura=e.target.value; save();};
-
-  /* ==== Init ==== */
-  (async function(){
-    load(); renderForm(); $("#totalCount").textContent=state.scans.length; renderTable(); refreshQR(); await listCameras(); $("#btnStop").disabled=true;
-    ["inpOperador","inpPlacas","selUnidad","inpFactura"].forEach(id=>document.getElementById(id).addEventListener("change",refreshQR));
-  })();
+  const $=s=>document.querySelector(s);
+  const fmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+  const state={scans:[],form:{operador:"",placas:"",unidad:"Camioneta",factura:""}};
+  function refreshQR(){const payload=JSON.stringify({meta:{v:1},...state.form,total:state.scans.length,items:state.scans});$("#qrCarga").innerHTML="";new QRCode($("#qrCarga"),{text:payload,width:140,height:140});$("#qrInner").innerHTML="";new QRCode($("#qrInner"),{text:payload,width:120,height:120});}
+  function preparePrint(){ $("#pOperador").textContent=state.form.operador; $("#pPlacas").textContent=state.form.placas; $("#pUnidad").textContent=state.form.unidad; $("#pFactura").textContent=state.form.factura; $("#pFecha").textContent=fmt(new Date()); $("#pTotal").textContent=state.scans.length; $("#pCodigo").textContent=(state.form.operador||"-").slice(0,3).toUpperCase()+"-"+(state.form.placas||"---"); $("#pFirmaOperador").textContent=(state.form.operador||"OPERADOR").toUpperCase(); const tb=$("#pTbody");tb.innerHTML="";state.scans.forEach((s,i)=>{const tr=document.createElement("tr");tr.innerHTML=`<td>${i+1}</td><td>${s.text}</td><td>${fmt(new Date(s.ts))}</td>`;tb.appendChild(tr);}); refreshQR(); }
+  function makeAOA(){const aoa=[["ALDISAN-KSK REPORTE DE EMBARQUE"],["Operador",state.form.operador],["Placas",state.form.placas],["Unidad",state.form.unidad],["Factura",state.form.factura],["Fecha exportación",fmt(new Date())],[],["#","Contenido QR","Fecha/Hora"]]; state.scans.forEach((s,i)=>aoa.push([i+1,s.text,fmt(new Date(s.ts))])); return aoa;}
+  function exportCSV(){const aoa=makeAOA(); const csv=aoa.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n"); const blob=new Blob([csv],{type:"text/csv"}); const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="reporte_embarque.csv";a.click();}
+  function exportXLSX(){const aoa=makeAOA(); try{const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=[{wch:5},{wch:80},{wch:20}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Embarque");XLSX.writeFile(wb,"reporte_embarque.xlsx",{bookType:"xlsx",compression:true});}catch(e){exportCSV();}}
+  $("#btnExportXLSX").onclick=exportXLSX; $("#btnExportCSV").onclick=exportCSV;
+  $("#btnPrint").onclick=()=>{preparePrint(); requestAnimationFrame(()=>requestAnimationFrame(()=>window.print()));};
+  $("#btnClear").onclick=()=>{state.scans=[];state.form={operador:"",placas:"",unidad:"Camioneta",factura:""};refreshQR();};
+  ["inpOperador","inpPlacas","selUnidad","inpFactura"].forEach(id=>document.getElementById(id).oninput=e=>{state.form[id.replace("inp","").toLowerCase()]=e.target.value;refreshQR();});
+  refreshQR();
   </script>
 </body>
 </html>
